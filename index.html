@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>悬疑风格弹窗效果</title>
+  <title>unknown node communication channel</title>
   <!-- 引入Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- 引入Font Awesome -->
@@ -254,45 +254,72 @@
   </div>
 
   <script>
-    // 等待DOM加载完成
-    document.addEventListener('DOMContentLoaded', function() {
-      // 获取初始窗口元素
+    // 简化的初始化逻辑，确保按钮可点击
+    window.onload = function() {
+      // 获取元素引用
       const initialWindow = document.getElementById('initial-window');
       const backBtn = document.getElementById('back-btn');
       const continueBtn = document.getElementById('continue-btn');
       const popupSound = document.getElementById('popup-sound');
       
-      // 初始窗口按钮交互
+      // 确保初始窗口在最上层
+      initialWindow.style.zIndex = "9999";
+      initialWindow.style.display = "flex";
+      
+      // 返回按钮交互 - 简单响应
       backBtn.addEventListener('click', function() {
-        // 播放一次音效以获得音频上下文权限
-        popupSound.play().catch(e => console.log('音频播放需要用户交互'));
-        // 返回按钮无动画，仅改变样式
-        backBtn.style.backgroundColor = 'rgba(255, 0, 102, 0.4)';
+        // 尝试播放音效以获取音频权限
+        try {
+          popupSound.currentTime = 0;
+          popupSound.play().catch(e => console.log('音频需要用户交互'));
+        } catch (e) {
+          console.log('音频播放失败:', e);
+        }
+        
+        // 简单的视觉反馈
+        this.style.backgroundColor = 'rgba(255, 0, 102, 0.4)';
         setTimeout(() => {
-          backBtn.style.backgroundColor = '';
-        }, 300);
+          this.style.backgroundColor = '';
+        }, 200);
       });
       
+      // 继续按钮交互 - 确保能触发后续流程
       continueBtn.addEventListener('click', function() {
-        // 播放音效并获取音频上下文权限
-        popupSound.play().catch(e => console.log('音频播放需要用户交互'));
+        // 尝试播放音效以获取音频权限
+        try {
+          popupSound.currentTime = 0;
+          popupSound.play().catch(e => console.log('音频需要用户交互'));
+        } catch (e) {
+          console.log('音频播放失败:', e);
+        }
         
-        // 给继续按钮添加动画效果
-        continueBtn.classList.add('button-shake');
+        // 添加按钮动画
+        this.classList.add('button-shake');
         
         // 隐藏初始窗口
         setTimeout(() => {
           initialWindow.classList.add('fade-out');
+          
+          // 确保窗口被正确隐藏
           setTimeout(() => {
             initialWindow.style.display = 'none';
             
-            // 停顿3秒后开始原效果
+            // 停顿3秒后开始原始效果
             setTimeout(startOriginalEffects, 3000);
           }, 300);
-        }, 500);
+        }, 300);
       });
       
-      // 原始效果的启动函数
+      // 确保按钮可以获取焦点并响应键盘事件（备用方案）
+      continueBtn.tabIndex = 0;
+      continueBtn.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          continueBtn.click();
+        }
+      });
+      
+      // 原始效果启动函数
       function startOriginalEffects() {
         // 聊天消息数据
         const chatMessages = [
@@ -339,7 +366,6 @@
             }
           ];
           
-          // 随机选择弹窗类型
           const type = popupTypes[Math.floor(Math.random() * popupTypes.length)];
           
           // 创建弹窗元素
@@ -371,7 +397,6 @@
             </div>
           `;
           
-          // 添加到容器
           document.getElementById('popup-container').appendChild(popup);
           
           // 设置随机位置
@@ -383,28 +408,28 @@
           popup.style.left = `${x}px`;
           popup.style.top = `${y}px`;
           
-          // 随机故障效果
           if (Math.random() > 0.6) {
             popup.classList.add('tv-flicker');
           }
           
-          // 播放弹窗音效（每次弹窗出现时）
-          popupSound.currentTime = 0; // 重置音效
-          popupSound.play().catch(e => console.log('音效播放失败:', e));
+          // 播放弹窗音效
+          try {
+            popupSound.currentTime = 0;
+            popupSound.play().catch(e => console.log('弹窗音效播放失败:', e));
+          } catch (e) {
+            console.log('播放音效时出错:', e);
+          }
           
           return popup;
         }
         
-        // 逐条显示聊天消息（间隔2秒，第一条前额外等待2秒）
+        // 逐条显示聊天消息
         function showChatMessagesSequentially() {
           const chatContainer = document.getElementById('chat-messages');
-          
-          // 清空容器
           chatContainer.innerHTML = '';
           
           // 第一条消息前等待2秒
           setTimeout(() => {
-            // 逐条添加消息，每条间隔2秒
             chatMessages.forEach((msg, index) => {
               setTimeout(() => {
                 const messageElement = document.createElement('div');
@@ -424,19 +449,15 @@
                 `;
                 
                 chatContainer.appendChild(messageElement);
-                
-                // 自动滚动到底部（无滚动条视觉效果）
                 chatContainer.scrollTop = chatContainer.scrollHeight;
                 
                 // 添加第七条消息（倒计时）
                 if (index === chatMessages.length - 1) {
-                  setTimeout(() => {
-                    addCountdownMessage();
-                  }, 2000);
+                  setTimeout(addCountdownMessage, 2000);
                 }
-              }, index * 2000); // 每条消息间隔2秒
+              }, index * 2000);
             });
-          }, 2000); // 第一条消息前等待2秒
+          }, 2000);
         }
         
         // 添加倒计时消息（10秒）
@@ -455,14 +476,12 @@
           chatContainer.appendChild(countdownElement);
           chatContainer.scrollTop = chatContainer.scrollHeight;
           
-          // 倒计时更新
           const countdownInterval = setInterval(() => {
             seconds--;
             document.getElementById('countdown').textContent = seconds;
             
             if (seconds <= 0) {
               clearInterval(countdownInterval);
-              // 关闭聊天框
               const chatBox = document.getElementById('chat-box');
               chatBox.style.opacity = 0;
               chatBox.style.pointerEvents = 'none';
@@ -483,63 +502,37 @@
           const sendBtn = document.getElementById('send-btn');
           let rejectClickCount = 0;
           
-          // 拒绝按钮交互
           rejectBtn.addEventListener('click', () => {
             rejectClickCount++;
-            
-            // 隐藏"好孩子"提示（如果显示）
             goodKid.className = 'absolute -bottom-5 left-0 right-0 text-center text-glitch text-xs opacity-0';
-            
-            // 按钮震动效果
             rejectBtn.classList.add('button-shake');
-            
-            // 重置之前的样式
             failureText.className = 'absolute -bottom-5 left-0 right-0 text-center text-danger text-xs opacity-0';
             
-            // 根据点击次数显示不同文本
             if (rejectClickCount >= 4) {
-              // 第4次及以后点击显示"别拒绝我"并保持显示
               failureText.textContent = '别拒绝我';
-              setTimeout(() => {
-                failureText.classList.add('text-fade-in');
-              }, 300);
+              setTimeout(() => failureText.classList.add('text-fade-in'), 300);
             } else {
-              // 前3次点击显示"operation failure"并在0.8秒后淡出
               failureText.textContent = 'operation failure';
               setTimeout(() => {
                 failureText.classList.add('text-fade-in');
-                
-                // 0.8秒后淡出
-                setTimeout(() => {
-                  failureText.classList.add('fade-out-slow');
-                }, 800);
+                setTimeout(() => failureText.classList.add('fade-out-slow'), 800);
               }, 300);
             }
             
-            // 重置震动效果
-            setTimeout(() => {
-              rejectBtn.classList.remove('button-shake');
-            }, 600);
+            setTimeout(() => rejectBtn.classList.remove('button-shake'), 600);
           });
           
-          // 同意按钮交互
           acceptBtn.addEventListener('click', () => {
-            // 显示"好孩子:)"在按钮下方
             goodKid.classList.add('text-fade-in');
             
-            // 选择框消失的等待时间为1秒
             setTimeout(() => {
               choiceContainer.style.opacity = 0;
               choiceContainer.style.pointerEvents = 'none';
               
-              // 选择框消失后显示聊天框
               setTimeout(() => {
-                // 显示聊天框并开始逐条显示消息
                 chatBox.style.opacity = 1;
                 chatBox.style.pointerEvents = 'auto';
                 chatBox.style.transform = 'scale(1)';
-                
-                // 开始逐条显示聊天消息
                 showChatMessagesSequentially();
               }, 500);
             }, 1000);
@@ -550,13 +543,11 @@
             const message = messageInput.value.trim();
             if (!message) return;
             
-            // 创建用户消息元素
             const chatContainer = document.getElementById('chat-messages');
             const userMessageWrapper = document.createElement('div');
             userMessageWrapper.className = 'mb-4 opacity-0 message-appear';
             
-            // 消息内容
-            const messageHtml = `
+            userMessageWrapper.innerHTML = `
               <p class="text-xs text-glitch/70 mb-1">[${getCurrentTime()}] 你：</p>
               <div class="flex items-start">
                 <p class="text-sm pl-4 text-glitch mr-2">${message}</p>
@@ -564,56 +555,42 @@
               </div>
             `;
             
-            userMessageWrapper.innerHTML = messageHtml;
             chatContainer.appendChild(userMessageWrapper);
-            
-            // 清空输入框并滚动到底部
             messageInput.value = '';
             chatContainer.scrollTop = chatContainer.scrollHeight;
             
-            // 显示发送失败提示（一直显示）
             setTimeout(() => {
               const failureEl = userMessageWrapper.querySelector('#temp-failure');
               failureEl.classList.add('text-fade-in');
             }, 500);
           }
           
-          // 发送按钮点击事件
           sendBtn.addEventListener('click', handleSendMessage);
-          
-          // 回车键发送
           messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-              handleSendMessage();
-            }
+            if (e.key === 'Enter') handleSendMessage();
           });
         }
         
-        // 获取当前时间（格式化）
+        // 获取当前时间
         function getCurrentTime() {
           const now = new Date();
-          const hours = String(now.getHours()).padStart(2, '0');
-          const minutes = String(now.getMinutes()).padStart(2, '0');
-          const seconds = String(now.getSeconds()).padStart(2, '0');
-          return `${hours}:${minutes}:${seconds}`;
+          return `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
         }
         
         // 初始化原始效果
         (function init() {
-          // 弹窗总数：80-100个
           const totalPopups = 80 + Math.floor(Math.random() * 21);
           const popups = [];
           
-          // 初始化按钮交互
           initButtonInteractions();
           
-          // 第一个弹窗立即出现
+          // 第一个弹窗
           const firstPopup = createWarningPopup(0);
           popups.push(firstPopup);
           
-          // 第一个弹窗出现后停顿2秒，再继续后续弹窗
+          // 后续弹窗
           setTimeout(() => {
-            // 第一阶段：接下来9个弹窗，间隔500ms
+            // 第一阶段弹窗
             for (let i = 1; i < 10; i++) {
               setTimeout(() => {
                 const popup = createWarningPopup(i);
@@ -621,7 +598,7 @@
               }, i * 500);
             }
             
-            // 第二阶段：接下来20个弹窗，间隔200ms
+            // 第二阶段弹窗
             for (let i = 10; i < 30; i++) {
               setTimeout(() => {
                 const popup = createWarningPopup(i);
@@ -629,7 +606,7 @@
               }, 10 * 500 + (i - 10) * 200);
             }
             
-            // 第三阶段：剩余弹窗
+            // 第三阶段弹窗
             for (let i = 30; i < totalPopups; i++) {
               const delayMultiplier = 35;
               setTimeout(() => {
@@ -638,37 +615,26 @@
               }, 10 * 500 + 20 * 200 + (i - 30) * delayMultiplier);
             }
             
-            // 所有弹窗显示完成后，停顿3秒，然后开始关闭
+            // 关闭弹窗并显示选择框
             const totalPopupTime = 10 * 500 + 20 * 200 + (totalPopups - 30) * 35;
             setTimeout(() => {
               const crtOverlay = document.getElementById('crt-overlay');
               
-              // 为所有弹窗添加CRT关闭动画
-              popups.forEach(popup => {
-                popup.classList.add('crt-shutdown');
-              });
+              popups.forEach(popup => popup.classList.add('crt-shutdown'));
               
-              // 同时激活CRT覆盖层效果
-              setTimeout(() => {
-                crtOverlay.style.opacity = 0.7;
-              }, 300);
+              setTimeout(() => crtOverlay.style.opacity = 0.7, 300);
               
-              // 动画结束后清理并显示选择框
               setTimeout(() => {
-                const container = document.getElementById('popup-container');
-                container.innerHTML = '';
+                document.getElementById('popup-container').innerHTML = '';
                 crtOverlay.style.opacity = 0;
-                
-                // 显示最终选择框
-                const choiceContainer = document.getElementById('final-choice-container');
-                choiceContainer.style.opacity = 1;
-                choiceContainer.style.pointerEvents = 'auto';
+                document.getElementById('final-choice-container').style.opacity = 1;
+                document.getElementById('final-choice-container').style.pointerEvents = 'auto';
               }, 1800);
             }, totalPopupTime + 3000);
           }, 2000);
         })();
       }
-    });
+    };
   </script>
 </body>
 </html>
