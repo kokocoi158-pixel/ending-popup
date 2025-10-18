@@ -282,9 +282,9 @@
       long: 0.3,                // 第一段音效音量
       closePopup: 0.05,          // 第二段音效音量
       connectionRequest: 0.1,    // 连接请求音效音量
-      errorSelection: 0.1,       // 错误选择音效音量
-      correctSelection: 0.1,     // 正确选择音效音量
-      messageReceive: 0.1        // 新增信息接收音效音量
+      errorSelection: 0.04,       // 错误选择音效音量
+      correctSelection: 0.05,     // 正确选择音效音量
+      messageReceive: 0.05        // 新增信息接收音效音量
     };
     
     // 音频上下文与状态管理
@@ -733,7 +733,7 @@
                 
                 // 添加倒计时消息
                 if (index === chatMessages.length - 1) {
-                  setTimeout(addCountdownMessage, 2000);
+                  setTimeout(addCountdownMessage, 3000);
                 }
               }, index * 2000);
             });
@@ -927,3 +927,4 @@
   </script>
 </body>
 </html>
+
