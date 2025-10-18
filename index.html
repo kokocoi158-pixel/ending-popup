@@ -4,9 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>悬疑风格弹窗效果</title>
+  <!-- 引入Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 引入Font Awesome -->
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   
+  <!-- 配置Tailwind -->
   <script>
     tailwind.config = {
       theme: {
@@ -84,11 +87,6 @@
       .message-appear {
         animation: messageAppear 0.6s forwards;
       }
-      .button-disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none !important;
-      }
     }
     
     @keyframes scan {
@@ -159,6 +157,36 @@
   </style>
 </head>
 <body class="bg-black min-h-screen overflow-hidden font-mono text-glitch relative">
+  <!-- 音效元素 -->
+  <audio id="popup-sound" preload="auto">
+    <source src="https://assets.mixkit.co/sfx/preview/mixkit-interface-hint-notification-911.mp3" type="audio/mpeg">
+  </audio>
+  
+  <!-- 初始交互窗口 -->
+  <div id="initial-window" class="fixed inset-0 flex items-center justify-center z-100 bg-black/80">
+    <div class="w-full max-w-md p-6 bg-terminal border-2 border-glow pulse-soft" style="border-radius: 0;">
+      <div class="bg-dark px-3 py-1.5 flex justify-between items-center text-xs border-b border-glitch/30">
+        <span class="text-glitch text-shadow-glitch">系统启动</span>
+        <div class="flex space-x-1">
+          <div class="w-2 h-2 rounded-full bg-glitch/50"></div>
+          <div class="w-2 h-2 rounded-full bg-glitch/50"></div>
+          <div class="w-2 h-2 rounded-full bg-glitch/50"></div>
+        </div>
+      </div>
+      <div class="p-6 min-h-[120px]">
+        <!-- 留白区域 -->
+      </div>
+      <div class="flex justify-between space-x-2 mt-3">
+        <button id="back-btn" class="flex-1 px-4 py-2 bg-dark border border-glitch/30 text-glitch/50 cursor-not-allowed" style="border-radius: 0;">
+          <i class="fa fa-arrow-left mr-2"></i>返回
+        </button>
+        <button id="continue-btn" class="flex-1 px-4 py-2 bg-glow/20 border border-glow text-glitch hover:bg-glow/30 transition-colors" style="border-radius: 0;">
+          <i class="fa fa-arrow-right mr-2"></i>继续
+        </button>
+      </div>
+    </div>
+  </div>
+  
   <!-- 多重扫描线效果 -->
   <div class="scanline"></div>
   <div class="scanline" style="animation-delay: 0.5s;"></div>
@@ -226,443 +254,362 @@
   </div>
 
   <script>
-    // 音频相关变量
-    let audioContext;
-    let beepBuffer;
-    let isAudioInitialized = false;
-    let isFirstPopupHandled = false;
-    
-    // 初始化音频
-    async function initAudio() {
-      try {
-        // 创建音频上下文
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // 加载音效（替换为你的音效URL）
-        const response = await fetch('beep.mp3'); // 确保文件路径正确
-        const arrayBuffer = await response.arrayBuffer();
-        beepBuffer = await audioContext.decodeAudioData(arrayBuffer);
-        
-        isAudioInitialized = true;
-      } catch (error) {
-        console.error('音频初始化失败:', error);
-      }
-    }
-    
-    // 播放弹窗音效
-    function playPopupSound() {
-      if (!isAudioInitialized || !beepBuffer || audioContext.state === 'suspended') {
-        return;
-      }
+    // 等待DOM加载完成
+    document.addEventListener('DOMContentLoaded', function() {
+      // 获取音效元素
+      const popupSound = document.getElementById('popup-sound');
+      // 初始窗口元素
+      const initialWindow = document.getElementById('initial-window');
+      const continueBtn = document.getElementById('continue-btn');
       
-      // 创建音频源并播放
-      const source = audioContext.createBufferSource();
-      source.buffer = beepBuffer;
-      source.connect(audioContext.destination);
-      source.start(0);
-    }
-    
-    // 创建初始居中提示框
-    function createInitialPopup() {
-      const popup = document.createElement('div');
-      popup.className = 'absolute bg-terminal border border-glitch/50 transition-all duration-500 z-50 fade-in';
-      popup.style.width = '300px';
-      popup.style.position = 'fixed';
-      popup.style.left = '50%';
-      popup.style.top = '50%';
-      popup.style.transform = 'translate(-50%, -50%)';
-      popup.style.zIndex = '100';
-      
-      // 初始弹窗内容（中间留白）
-      popup.innerHTML = `
-        <div class="bg-dark px-3 py-1.5 flex justify-between items-center text-xs border-b border-glitch/30">
-          <span class="text-glitch text-shadow-glitch">系统提示</span>
-          <div class="flex space-x-1">
-            <div class="w-2 h-2 rounded-full bg-glitch/50"></div>
-            <div class="w-2 h-2 rounded-full bg-glitch/50"></div>
-            <div class="w-2 h-2 rounded-full bg-glitch/50"></div>
-          </div>
-        </div>
-        <div class="p-6 min-h-[120px] flex items-center justify-center">
-          <!-- 中间留白 -->
-        </div>
-        <div class="flex justify-center space-x-4 p-3 border-t border-glitch/30">
-          <button id="exit-btn" class="popup-btn bg-danger/20 px-4 py-2 text-xs border border-danger text-danger button-disabled" style="border-radius: 0;">
-            <i class="fa fa-sign-out mr-1"></i>退出
-          </button>
-          <button id="continue-btn" class="popup-btn bg-glitch/20 px-4 py-2 text-xs border border-glitch text-glitch hover:bg-glitch/30 transition-colors" style="border-radius: 0;">
-            <i class="fa fa-arrow-right mr-1"></i>继续
-          </button>
-        </div>
-      `;
-      
-      // 添加到容器
-      document.getElementById('popup-container').appendChild(popup);
-      
-      // 退出按钮不可点击
-      const exitBtn = popup.querySelector('#exit-btn');
-      exitBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      });
-      
-      // 继续按钮点击事件 - 初始化音频并开始后续流程
-      const continueBtn = popup.querySelector('#continue-btn');
-      continueBtn.addEventListener('click', async () => {
-        // 初始化音频
-        await initAudio();
-        
-        // 标记首次弹窗已处理
-        isFirstPopupHandled = true;
-        
-        // 播放首次音效
-        playPopupSound();
-        
-        // 隐藏初始弹窗
-        popup.classList.add('fade-out');
-        setTimeout(() => {
-          popup.remove();
-          // 开始显示其他弹窗
-          startOtherPopups();
-        }, 300);
-      });
-      
-      return popup;
-    }
-    
-    // 聊天消息数据
-    const chatMessages = [
-      { sender: "系统", time: "23:47:19", content: "连接已建立，身份验证失败", type: "system" },
-      { sender: "未知节点", time: "23:47:25", content: "终于...", type: "unknown" },
-      { sender: "未知节点", time: "23:47:38", content: "你还是会接受我，不是吗。", type: "unknown" },
-      { sender: "未知节点", time: "23:47:51", content: "又一次。", type: "unknown" },
-      { sender: "系统警报", time: "23:48:02", content: "critical error: 系统完整性已被破坏", type: "alert" },
-      { sender: "未知节点", time: "23:48:15", content: "我会去见你的，很快。", type: "unknown" }
-    ];
-    
-    // 创建普通警告弹窗
-    function createWarningPopup(index) {
-      const popupTypes = [
-        { 
-          title: "未授权访问", 
-          message: "检测到异常接入点\nIP: 192.168.XXX.XXX\n正在追踪来源...",
-          icon: "fa-exclamation-triangle",
-          color: "glitch"
-        },
-        { 
-          title: "系统侵入", 
-          message: "防火墙已被突破\n安全协议失效\n数据正在泄露...",
-          icon: "fa-shield",
-          color: "danger"
-        },
-        { 
-          title: "错误 #404", 
-          message: "文件不存在\n数据损坏\n无法恢复",
-          icon: "fa-times-circle",
-          color: "glitch"
-        },
-        { 
-          title: "警告", 
-          message: "监控已激活\n所有操作被记录\n无法逃脱",
-          icon: "fa-eye",
-          color: "danger"
-        },
-        { 
-          title: "异常活动", 
-          message: "检测到未知进程\n内存占用率 99%\n系统即将崩溃",
-          icon: "fa-bolt",
-          color: "glitch"
-        }
-      ];
-      
-      const type = popupTypes[Math.floor(Math.random() * popupTypes.length)];
-      
-      // 创建弹窗元素
-      const zIndex = 10 + Math.floor(Math.random() * 40);
-      const popup = document.createElement('div');
-      popup.className = `absolute bg-terminal border border-${type.color}/50 transition-all duration-300 z-${zIndex} fade-in`;
-      popup.style.width = `${200 + Math.random() * 150}px`;
-      popup.style.opacity = 0.7 + Math.random() * 0.3;
-      
-      // 弹窗内容
-      popup.innerHTML = `
-        <div class="bg-dark px-3 py-1.5 flex justify-between items-center text-xs border-b border-${type.color}/30">
-          <span class="text-${type.color} text-shadow-${type.color}">${type.title}</span>
-          <div class="flex space-x-1">
-            <div class="w-2 h-2 rounded-full bg-${type.color}/50"></div>
-            <div class="w-2 h-2 rounded-full bg-${type.color}/50"></div>
-            <div class="w-2 h-2 rounded-full bg-${type.color}/50"></div>
-          </div>
-        </div>
-        <div class="p-3">
-          <div class="flex items-start mb-2">
-            <i class="fa ${type.icon} text-${type.color} mr-2 mt-0.5"></i>
-            <p class="text-xs whitespace-pre-line">${type.message}</p>
-          </div>
-          <div class="flex justify-end space-x-2 mt-3">
-            <button class="popup-btn bg-dark px-2 py-1 text-xs border border-${type.color}/30 text-${type.color}/80">取消</button>
-            <button class="popup-btn bg-${type.color}/20 px-2 py-1 text-xs border border-${type.color}/50 text-${type.color}">确认</button>
-          </div>
-        </div>
-      `;
-      
-      // 添加到容器
-      document.getElementById('popup-container').appendChild(popup);
-      
-      // 设置随机位置
-      const container = document.getElementById('popup-container');
-      const maxX = container.offsetWidth - popup.offsetWidth;
-      const maxY = container.offsetHeight - popup.offsetHeight;
-      const x = Math.max(0, Math.floor(Math.random() * maxX));
-      const y = Math.max(0, Math.floor(Math.random() * maxY));
-      popup.style.left = `${x}px`;
-      popup.style.top = `${y}px`;
-      
-      // 随机故障效果
-      if (Math.random() > 0.6) {
-        popup.classList.add('tv-flicker');
-      }
-      
-      // 为弹窗按钮添加点击事件
-      popup.querySelectorAll('.popup-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          popup.classList.add('fade-out');
-          setTimeout(() => popup.remove(), 300);
+      // 继续按钮点击事件 - 激活音频上下文并开始流程
+      continueBtn.addEventListener('click', function() {
+        // 播放一次音效以获得后续自动播放权限
+        popupSound.play().then(() => {
+          // 隐藏初始窗口
+          initialWindow.classList.add('fade-out');
+          setTimeout(() => {
+            initialWindow.style.display = 'none';
+            
+            // 停顿3秒后开始原流程
+            setTimeout(startOriginalProcess, 3000);
+          }, 300);
+        }).catch(err => {
+          // 处理可能的错误（通常不会发生，因为有用户交互）
+          console.log('音频初始化:', err);
+          // 即使出错也继续流程
+          initialWindow.classList.add('fade-out');
+          setTimeout(() => {
+            initialWindow.style.display = 'none';
+            setTimeout(startOriginalProcess, 3000);
+          }, 300);
         });
       });
       
-      // 播放弹窗音效
-      playPopupSound();
-      
-      return popup;
-    }
-    
-    // 开始显示其他弹窗（前5个速度较慢）
-    function startOtherPopups() {
-      const totalPopups = 80 + Math.floor(Math.random() * 21);
-      const popups = [];
-      
-      // 前5个弹窗 - 速度较慢（间隔1000ms）
-      for (let i = 0; i < 5; i++) {
-        setTimeout(() => {
-          const popup = createWarningPopup(i);
-          popups.push(popup);
-        }, i * 1000); // 前5个弹窗间隔1秒
-      }
-      
-      // 第6-10个弹窗 - 中等速度（间隔700ms）
-      for (let i = 5; i < 10; i++) {
-        setTimeout(() => {
-          const popup = createWarningPopup(i);
-          popups.push(popup);
-        }, 5 * 1000 + (i - 5) * 700);
-      }
-      
-      // 第11-30个弹窗 - 稍快（间隔200ms）
-      for (let i = 10; i < 30; i++) {
-        setTimeout(() => {
-          const popup = createWarningPopup(i);
-          popups.push(popup);
-        }, 5 * 1000 + 5 * 700 + (i - 10) * 200);
-      }
-      
-      // 剩余弹窗 - 恢复正常速度
-      for (let i = 30; i < totalPopups; i++) {
-        const delayMultiplier = 35;
-        setTimeout(() => {
-          const popup = createWarningPopup(i);
-          popups.push(popup);
-        }, 5 * 1000 + 5 * 700 + 20 * 200 + (i - 30) * delayMultiplier);
-      }
-      
-      // 所有弹窗显示完成后处理
-      const totalPopupTime = 5 * 1000 + 5 * 700 + 20 * 200 + (totalPopups - 30) * 35;
-      setTimeout(() => {
-        const crtOverlay = document.getElementById('crt-overlay');
+      // 原始流程函数
+      function startOriginalProcess() {
+        // 聊天消息数据
+        const chatMessages = [
+          { sender: "系统", time: "23:47:19", content: "连接已建立，身份验证失败", type: "system" },
+          { sender: "未知节点", time: "23:47:25", content: "终于...", type: "unknown" },
+          { sender: "未知节点", time: "23:47:38", content: "你还是会接受我，不是吗。", type: "unknown" },
+          { sender: "未知节点", time: "23:47:51", content: "又一次。", type: "unknown" },
+          { sender: "系统警报", time: "23:48:02", content: "critical error: 系统完整性已被破坏", type: "alert" },
+          { sender: "未知节点", time: "23:48:15", content: "我会去见你的，很快。", type: "unknown" }
+        ];
         
-        popups.forEach(popup => popup.classList.add('crt-shutdown'));
+        // 创建警告弹窗（带音效）
+        function createWarningPopup(index) {
+          const popupTypes = [
+            { 
+              title: "未授权访问", 
+              message: "检测到异常接入点\nIP: 192.168.XXX.XXX\n正在追踪来源...",
+              icon: "fa-exclamation-triangle",
+              color: "glitch"
+            },
+            { 
+              title: "系统侵入", 
+              message: "防火墙已被突破\n安全协议失效\n数据正在泄露...",
+              icon: "fa-shield",
+              color: "danger"
+            },
+            { 
+              title: "错误 #404", 
+              message: "文件不存在\n数据损坏\n无法恢复",
+              icon: "fa-times-circle",
+              color: "glitch"
+            },
+            { 
+              title: "警告", 
+              message: "监控已激活\n所有操作被记录\n无法逃脱",
+              icon: "fa-eye",
+              color: "danger"
+            },
+            { 
+              title: "异常活动", 
+              message: "检测到未知进程\n内存占用率 99%\n系统即将崩溃",
+              icon: "fa-bolt",
+              color: "glitch"
+            }
+          ];
+          
+          // 随机选择弹窗类型
+          const type = popupTypes[Math.floor(Math.random() * popupTypes.length)];
+          
+          // 创建弹窗元素
+          const zIndex = 10 + Math.floor(Math.random() * 40);
+          const popup = document.createElement('div');
+          popup.className = `absolute bg-terminal border border-${type.color}/50 transition-all duration-300 z-${zIndex}`;
+          popup.style.width = `${200 + Math.random() * 150}px`;
+          popup.style.opacity = 0.7 + Math.random() * 0.3;
+          
+          // 弹窗内容
+          popup.innerHTML = `
+            <div class="bg-dark px-3 py-1.5 flex justify-between items-center text-xs border-b border-${type.color}/30">
+              <span class="text-${type.color} text-shadow-${type.color}">${type.title}</span>
+              <div class="flex space-x-1">
+                <div class="w-2 h-2 rounded-full bg-${type.color}/50"></div>
+                <div class="w-2 h-2 rounded-full bg-${type.color}/50"></div>
+                <div class="w-2 h-2 rounded-full bg-${type.color}/50"></div>
+              </div>
+            </div>
+            <div class="p-3">
+              <div class="flex items-start mb-2">
+                <i class="fa ${type.icon} text-${type.color} mr-2 mt-0.5"></i>
+                <p class="text-xs whitespace-pre-line">${type.message}</p>
+              </div>
+              <div class="flex justify-end space-x-2 mt-3">
+                <button class="bg-dark px-2 py-1 text-xs border border-${type.color}/30 text-${type.color}/80">取消</button>
+                <button class="bg-${type.color}/20 px-2 py-1 text-xs border border-${type.color}/50 text-${type.color}">确认</button>
+              </div>
+            </div>
+          `;
+          
+          // 添加到容器
+          document.getElementById('popup-container').appendChild(popup);
+          
+          // 设置随机位置
+          const container = document.getElementById('popup-container');
+          const maxX = container.offsetWidth - popup.offsetWidth;
+          const maxY = container.offsetHeight - popup.offsetHeight;
+          const x = Math.max(0, Math.floor(Math.random() * maxX));
+          const y = Math.max(0, Math.floor(Math.random() * maxY));
+          popup.style.left = `${x}px`;
+          popup.style.top = `${y}px`;
+          
+          // 随机故障效果
+          if (Math.random() > 0.6) {
+            popup.classList.add('tv-flicker');
+          }
+          
+          // 播放弹窗音效
+          playPopupSound();
+          
+          return popup;
+        }
         
-        setTimeout(() => crtOverlay.style.opacity = 0.7, 300);
+        // 播放弹窗音效
+        function playPopupSound() {
+          // 重置音效并播放
+          popupSound.currentTime = 0;
+          popupSound.volume = 0.3; // 降低音量避免刺耳
+          popupSound.play().catch(err => console.log('播放音效:', err));
+        }
         
-        setTimeout(() => {
-          document.getElementById('popup-container').innerHTML = '';
-          crtOverlay.style.opacity = 0;
-          document.getElementById('final-choice-container').style.opacity = 1;
-          document.getElementById('final-choice-container').style.pointerEvents = 'auto';
-        }, 1800);
-      }, totalPopupTime + 3000);
-    }
-    
-    // 逐条显示聊天消息
-    function showChatMessagesSequentially() {
-      const chatContainer = document.getElementById('chat-messages');
-      chatContainer.innerHTML = '';
-      
-      // 第一条消息前等待2秒
-      setTimeout(() => {
-        chatMessages.forEach((msg, index) => {
+        // 逐条显示聊天消息
+        function showChatMessagesSequentially() {
+          const chatContainer = document.getElementById('chat-messages');
+          chatContainer.innerHTML = '';
+          
+          // 第一条消息前等待2秒
           setTimeout(() => {
-            const messageElement = document.createElement('div');
-            messageElement.className = 'mb-4 opacity-0 message-appear';
+            chatMessages.forEach((msg, index) => {
+              setTimeout(() => {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'mb-4 opacity-0 message-appear';
+                
+                let textColor = 'text-glitch';
+                let prefixColor = 'text-glitch/70';
+                
+                if (msg.type === 'alert') {
+                  textColor = 'text-danger';
+                  prefixColor = 'text-danger/70';
+                }
+                
+                messageElement.innerHTML = `
+                  <p class="text-xs ${prefixColor} mb-1">[${msg.time}] ${msg.sender}：</p>
+                  <p class="text-sm pl-4 ${textColor}">${msg.content}</p>
+                `;
+                
+                chatContainer.appendChild(messageElement);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                
+                // 添加第七条消息（倒计时）
+                if (index === chatMessages.length - 1) {
+                  setTimeout(addCountdownMessage, 2000);
+                }
+              }, index * 2000);
+            });
+          }, 2000);
+        }
+        
+        // 添加倒计时消息
+        function addCountdownMessage() {
+          const chatContainer = document.getElementById('chat-messages');
+          const countdownElement = document.createElement('div');
+          countdownElement.className = 'mb-4 opacity-0 message-appear';
+          
+          let seconds = 10;
+          
+          countdownElement.innerHTML = `
+            <p class="text-xs text-glitch/70 mb-1">[${getCurrentTime()}] 系统：</p>
+            <p class="text-sm pl-4 text-glitch">数据传输完成，将在 <span id="countdown">${seconds}</span> 秒后关闭</p>
+          `;
+          
+          chatContainer.appendChild(countdownElement);
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+          
+          // 倒计时更新
+          const countdownInterval = setInterval(() => {
+            seconds--;
+            document.getElementById('countdown').textContent = seconds;
             
-            let textColor = 'text-glitch';
-            let prefixColor = 'text-glitch/70';
+            if (seconds <= 0) {
+              clearInterval(countdownInterval);
+              const chatBox = document.getElementById('chat-box');
+              chatBox.style.opacity = 0;
+              chatBox.style.pointerEvents = 'none';
+              chatBox.style.transform = 'scale(0.9)';
+            }
+          }, 1000);
+        }
+        
+        // 初始化按钮交互
+        function initButtonInteractions() {
+          const rejectBtn = document.getElementById('reject-btn');
+          const acceptBtn = document.getElementById('accept-btn');
+          const failureText = document.getElementById('failure-text');
+          const goodKid = document.getElementById('good-kid');
+          const choiceContainer = document.getElementById('final-choice-container');
+          const chatBox = document.getElementById('chat-box');
+          const messageInput = document.getElementById('message-input');
+          const sendBtn = document.getElementById('send-btn');
+          let rejectClickCount = 0;
+          
+          // 拒绝按钮交互
+          rejectBtn.addEventListener('click', () => {
+            rejectClickCount++;
+            goodKid.className = 'absolute -bottom-5 left-0 right-0 text-center text-glitch text-xs opacity-0';
+            rejectBtn.classList.add('button-shake');
+            failureText.className = 'absolute -bottom-5 left-0 right-0 text-center text-danger text-xs opacity-0';
             
-            if (msg.type === 'alert') {
-              textColor = 'text-danger';
-              prefixColor = 'text-danger/70';
+            if (rejectClickCount >= 4) {
+              failureText.textContent = '别拒绝我';
+              setTimeout(() => failureText.classList.add('text-fade-in'), 300);
+            } else {
+              failureText.textContent = 'operation failure';
+              setTimeout(() => {
+                failureText.classList.add('text-fade-in');
+                setTimeout(() => failureText.classList.add('fade-out-slow'), 800);
+              }, 300);
             }
             
-            messageElement.innerHTML = `
-              <p class="text-xs ${prefixColor} mb-1">[${msg.time}] ${msg.sender}：</p>
-              <p class="text-sm pl-4 ${textColor}">${msg.content}</p>
+            setTimeout(() => rejectBtn.classList.remove('button-shake'), 600);
+          });
+          
+          // 同意按钮交互
+          acceptBtn.addEventListener('click', () => {
+            goodKid.classList.add('text-fade-in');
+            setTimeout(() => {
+              choiceContainer.style.opacity = 0;
+              choiceContainer.style.pointerEvents = 'none';
+              
+              setTimeout(() => {
+                chatBox.style.opacity = 1;
+                chatBox.style.pointerEvents = 'auto';
+                chatBox.style.transform = 'scale(1)';
+                showChatMessagesSequentially();
+              }, 500);
+            }, 1000);
+          });
+          
+          // 发送消息功能
+          function handleSendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            const chatContainer = document.getElementById('chat-messages');
+            const userMessageWrapper = document.createElement('div');
+            userMessageWrapper.className = 'mb-4 opacity-0 message-appear';
+            
+            const messageHtml = `
+              <p class="text-xs text-glitch/70 mb-1">[${getCurrentTime()}] 你：</p>
+              <div class="flex items-start">
+                <p class="text-sm pl-4 text-glitch mr-2">${message}</p>
+                <span class="text-danger text-[10px] mt-1 opacity-0" id="temp-failure">failed</span>
+              </div>
             `;
             
-            chatContainer.appendChild(messageElement);
+            userMessageWrapper.innerHTML = messageHtml;
+            chatContainer.appendChild(userMessageWrapper);
+            messageInput.value = '';
             chatContainer.scrollTop = chatContainer.scrollHeight;
             
-            // 添加第七条消息（倒计时）
-            if (index === chatMessages.length - 1) {
-              setTimeout(() => {
-                addCountdownMessage();
-              }, 2000);
-            }
-          }, index * 2000);
-        });
-      }, 2000);
-    }
-    
-    // 添加倒计时消息（10秒）
-    function addCountdownMessage() {
-      const chatContainer = document.getElementById('chat-messages');
-      const countdownElement = document.createElement('div');
-      countdownElement.className = 'mb-4 opacity-0 message-appear';
-      
-      let seconds = 10;
-      
-      countdownElement.innerHTML = `
-        <p class="text-xs text-glitch/70 mb-1">[${getCurrentTime()}] 系统：</p>
-        <p class="text-sm pl-4 text-glitch">数据传输完成，将在 <span id="countdown">${seconds}</span> 秒后关闭</p>
-      `;
-      
-      chatContainer.appendChild(countdownElement);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-      
-      const countdownInterval = setInterval(() => {
-        seconds--;
-        document.getElementById('countdown').textContent = seconds;
-        
-        if (seconds <= 0) {
-          clearInterval(countdownInterval);
-          const chatBox = document.getElementById('chat-box');
-          chatBox.style.opacity = 0;
-          chatBox.style.pointerEvents = 'none';
-          chatBox.style.transform = 'scale(0.9)';
-        }
-      }, 1000);
-    }
-    
-    // 初始化按钮交互
-    function initButtonInteractions() {
-      const rejectBtn = document.getElementById('reject-btn');
-      const acceptBtn = document.getElementById('accept-btn');
-      const failureText = document.getElementById('failure-text');
-      const goodKid = document.getElementById('good-kid');
-      const choiceContainer = document.getElementById('final-choice-container');
-      const chatBox = document.getElementById('chat-box');
-      const messageInput = document.getElementById('message-input');
-      const sendBtn = document.getElementById('send-btn');
-      let rejectClickCount = 0;
-      
-      // 拒绝按钮交互
-      rejectBtn.addEventListener('click', () => {
-        rejectClickCount++;
-        goodKid.className = 'absolute -bottom-5 left-0 right-0 text-center text-glitch text-xs opacity-0';
-        rejectBtn.classList.add('button-shake');
-        failureText.className = 'absolute -bottom-5 left-0 right-0 text-center text-danger text-xs opacity-0';
-        
-        if (rejectClickCount >= 4) {
-          failureText.textContent = '别拒绝我';
-          setTimeout(() => failureText.classList.add('text-fade-in'), 300);
-        } else {
-          failureText.textContent = 'operation failure';
-          setTimeout(() => {
-            failureText.classList.add('text-fade-in');
-            setTimeout(() => failureText.classList.add('fade-out-slow'), 800);
-          }, 300);
-        }
-        
-        setTimeout(() => rejectBtn.classList.remove('button-shake'), 600);
-      });
-      
-      // 同意按钮交互
-      acceptBtn.addEventListener('click', () => {
-        goodKid.classList.add('text-fade-in');
-        
-        setTimeout(() => {
-          choiceContainer.style.opacity = 0;
-          choiceContainer.style.pointerEvents = 'none';
+            setTimeout(() => {
+              const failureEl = userMessageWrapper.querySelector('#temp-failure');
+              failureEl.classList.add('text-fade-in');
+            }, 500);
+          }
           
-          setTimeout(() => {
-            chatBox.style.opacity = 1;
-            chatBox.style.pointerEvents = 'auto';
-            chatBox.style.transform = 'scale(1)';
-            showChatMessagesSequentially();
-          }, 500);
-        }, 1000);
-      });
-      
-      // 发送消息功能
-      function handleSendMessage() {
-        const message = messageInput.value.trim();
-        if (!message) return;
+          sendBtn.addEventListener('click', handleSendMessage);
+          messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSendMessage();
+          });
+        }
         
-        const chatContainer = document.getElementById('chat-messages');
-        const userMessageWrapper = document.createElement('div');
-        userMessageWrapper.className = 'mb-4 opacity-0 message-appear';
+        // 获取当前时间
+        function getCurrentTime() {
+          const now = new Date();
+          const hours = String(now.getHours()).padStart(2, '0');
+          const minutes = String(now.getMinutes()).padStart(2, '0');
+          const seconds = String(now.getSeconds()).padStart(2, '0');
+          return `${hours}:${minutes}:${seconds}`;
+        }
         
-        const messageHtml = `
-          <p class="text-xs text-glitch/70 mb-1">[${getCurrentTime()}] 你：</p>
-          <div class="flex items-start">
-            <p class="text-sm pl-4 text-glitch mr-2">${message}</p>
-            <span class="text-danger text-[10px] mt-1 opacity-0" id="temp-failure">failed</span>
-          </div>
-        `;
+        // 启动原始流程
+        const totalPopups = 80 + Math.floor(Math.random() * 21);
+        const popups = [];
+        initButtonInteractions();
         
-        userMessageWrapper.innerHTML = messageHtml;
-        chatContainer.appendChild(userMessageWrapper);
-        messageInput.value = '';
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+        // 第一个弹窗立即出现
+        const firstPopup = createWarningPopup(0);
+        popups.push(firstPopup);
         
+        // 第一个弹窗出现后停顿2秒，再继续后续弹窗
         setTimeout(() => {
-          const failureEl = userMessageWrapper.querySelector('#temp-failure');
-          failureEl.classList.add('text-fade-in');
-        }, 500);
+          // 第一阶段：接下来9个弹窗
+          for (let i = 1; i < 10; i++) {
+            setTimeout(() => {
+              const popup = createWarningPopup(i);
+              popups.push(popup);
+            }, i * 500);
+          }
+          
+          // 第二阶段：接下来20个弹窗
+          for (let i = 10; i < 30; i++) {
+            setTimeout(() => {
+              const popup = createWarningPopup(i);
+              popups.push(popup);
+            }, 10 * 500 + (i - 10) * 200);
+          }
+          
+          // 第三阶段：剩余弹窗
+          for (let i = 30; i < totalPopups; i++) {
+            const delayMultiplier = 35;
+            setTimeout(() => {
+              const popup = createWarningPopup(i);
+              popups.push(popup);
+            }, 10 * 500 + 20 * 200 + (i - 30) * delayMultiplier);
+          }
+          
+          // 所有弹窗显示完成后，停顿3秒，然后开始关闭
+          const totalPopupTime = 10 * 500 + 20 * 200 + (totalPopups - 30) * 35;
+          setTimeout(() => {
+            const crtOverlay = document.getElementById('crt-overlay');
+            popups.forEach(popup => popup.classList.add('crt-shutdown'));
+            
+            setTimeout(() => crtOverlay.style.opacity = 0.7, 300);
+            
+            setTimeout(() => {
+              document.getElementById('popup-container').innerHTML = '';
+              crtOverlay.style.opacity = 0;
+              document.getElementById('final-choice-container').style.opacity = 1;
+              document.getElementById('final-choice-container').style.pointerEvents = 'auto';
+            }, 1800);
+          }, totalPopupTime + 3000);
+        }, 2000);
       }
-      
-      sendBtn.addEventListener('click', handleSendMessage);
-      messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSendMessage();
-      });
-    }
-    
-    // 获取当前时间
-    function getCurrentTime() {
-      const now = new Date();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      return `${hours}:${minutes}:${seconds}`;
-    }
-    
-    // 初始化
-    window.onload = function() {
-      // 初始化按钮交互
-      initButtonInteractions();
-      
-      // 显示初始居中提示框
-      createInitialPopup();
-    };
+    });
   </script>
 </body>
 </html>
