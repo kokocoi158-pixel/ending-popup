@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>悬疑风格弹窗效果</title>
+  <title>UNKNOWN CONTACT</title>
   <!-- 引入Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- 引入Font Awesome -->
@@ -181,10 +181,11 @@
     </div>
   </div>
 
-  <!-- 音效元素 -->
-  <audio id="popup-sound" preload="auto">
+  <!-- 音效元素 - 添加了多个音频源以确保兼容性 -->
+  <audio id="popup-sound" preload="auto" volume="0.3">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/tanchu.mp3" type="audio/mpeg">
-   您的浏览器不支持音频元素。
+    <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/tanchu.ogg" type="audio/ogg">
+    您的浏览器不支持音频元素。
   </audio>
   
   <!-- 多重扫描线效果 -->
@@ -254,8 +255,21 @@
   </div>
 
   <script>
+    // 音频上下文修复方案
+    let audioContext;
+    function initAudioContext() {
+      if (typeof AudioContext !== 'undefined') {
+        audioContext = new AudioContext();
+      } else if (typeof webkitAudioContext !== 'undefined') {
+        audioContext = new webkitAudioContext();
+      }
+    }
+
     // 简化的初始化逻辑，确保按钮可点击
     window.onload = function() {
+      // 预初始化音频上下文
+      initAudioContext();
+      
       // 获取元素引用
       const initialWindow = document.getElementById('initial-window');
       const backBtn = document.getElementById('back-btn');
@@ -266,32 +280,56 @@
       initialWindow.style.zIndex = "9999";
       initialWindow.style.display = "flex";
       
-      // 返回按钮交互 - 简单响应
-      backBtn.addEventListener('click', function() {
-        // 尝试播放音效以获取音频权限
-        try {
-          popupSound.currentTime = 0;
-          popupSound.play().catch(e => console.log('音频需要用户交互'));
-        } catch (e) {
-          console.log('音频播放失败:', e);
+      // 强制音频加载
+      popupSound.load();
+      
+      // 音频播放辅助函数
+      function playSound() {
+        // 检查音频上下文状态并恢复
+        if (audioContext && audioContext.state === 'suspended') {
+          audioContext.resume();
         }
         
-        // 简单的视觉反馈
+        // 尝试播放音效
+        try {
+          popupSound.currentTime = 0;
+          popupSound.play()
+            .then(() => console.log('音频播放成功'))
+            .catch(e => {
+              console.log('音频播放失败:', e);
+              // 降级方案: 创建音频上下文播放
+              if (audioContext) {
+                fetch(popupSound.src)
+                  .then(response => response.arrayBuffer())
+                  .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+                  .then(audioBuffer => {
+                    const source = audioContext.createBufferSource();
+                    source.buffer = audioBuffer;
+                    source.connect(audioContext.destination);
+                    source.start(0);
+                  })
+                  .catch(e => console.log('音频上下文播放失败:', e));
+              }
+            });
+        } catch (e) {
+          console.log('播放音效时出错:', e);
+        }
+      }
+      
+      // 返回按钮交互
+      backBtn.addEventListener('click', function() {
+        playSound();
+        
+        // 视觉反馈
         this.style.backgroundColor = 'rgba(255, 0, 102, 0.4)';
         setTimeout(() => {
           this.style.backgroundColor = '';
         }, 200);
       });
       
-      // 继续按钮交互 - 确保能触发后续流程
+      // 继续按钮交互
       continueBtn.addEventListener('click', function() {
-        // 尝试播放音效以获取音频权限
-        try {
-          popupSound.currentTime = 0;
-          popupSound.play().catch(e => console.log('音频需要用户交互'));
-        } catch (e) {
-          console.log('音频播放失败:', e);
-        }
+        playSound();
         
         // 添加按钮动画
         this.classList.add('button-shake');
@@ -310,7 +348,7 @@
         }, 300);
       });
       
-      // 确保按钮可以获取焦点并响应键盘事件（备用方案）
+      // 键盘支持
       continueBtn.tabIndex = 0;
       continueBtn.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -318,6 +356,13 @@
           continueBtn.click();
         }
       });
+      
+      // 页面点击时也尝试获取音频权限（增加容错）
+      document.addEventListener('click', function() {
+        if (audioContext && audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+      }, { once: true });
       
       // 原始效果启动函数
       function startOriginalEffects() {
@@ -413,12 +458,7 @@
           }
           
           // 播放弹窗音效
-          try {
-            popupSound.currentTime = 0;
-            popupSound.play().catch(e => console.log('弹窗音效播放失败:', e));
-          } catch (e) {
-            console.log('播放音效时出错:', e);
-          }
+          playSound();
           
           return popup;
         }
@@ -519,11 +559,17 @@
               }, 300);
             }
             
+            // 播放音效
+            playSound();
+            
             setTimeout(() => rejectBtn.classList.remove('button-shake'), 600);
           });
           
           acceptBtn.addEventListener('click', () => {
             goodKid.classList.add('text-fade-in');
+            
+            // 播放音效
+            playSound();
             
             setTimeout(() => {
               choiceContainer.style.opacity = 0;
@@ -558,6 +604,9 @@
             chatContainer.appendChild(userMessageWrapper);
             messageInput.value = '';
             chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // 播放音效
+            playSound();
             
             setTimeout(() => {
               const failureEl = userMessageWrapper.querySelector('#temp-failure');
@@ -638,4 +687,3 @@
   </script>
 </body>
 </html>
-
