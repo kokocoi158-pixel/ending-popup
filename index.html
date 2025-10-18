@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>悬疑风格弹窗效果</title>
+  <title>unknown node communication channel</title>
   <!-- 引入Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- 引入Font Awesome -->
@@ -59,14 +59,20 @@
       .fade-out {
         animation: fadeOut 0.3s forwards;
       }
+      .fade-out-slow {
+        animation: fadeOut 0.8s forwards;
+      }
       .crt-shutdown {
-        animation: crtShutdown 1.8s forwards; /* 延长CRT关闭动画时间 */
+        animation: crtShutdown 1.8s forwards;
       }
       .fade-in {
         animation: fadeIn 0.5s forwards;
       }
       .pulse-soft {
         animation: pulseSoft 2s infinite alternate;
+      }
+      .breath-effect {
+        animation: breath 2s infinite alternate;
       }
       .static-overlay {
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.3'/%3E%3C/svg%3E");
@@ -127,6 +133,11 @@
       to { box-shadow: 0 0 20px theme('colors.glitch/80'); }
     }
     
+    @keyframes breath {
+      from { opacity: 0.6; text-shadow: 0 0 5px theme('colors.danger/50'); }
+      to { opacity: 1; text-shadow: 0 0 10px theme('colors.danger'); }
+    }
+    
     @keyframes buttonShake {
       10%, 90% { transform: translateX(-1px); }
       20%, 80% { transform: translateX(2px); }
@@ -170,9 +181,9 @@
       </div>
       
       <div class="my-4">
-        <p class="text-sm mb-3">检测到来自未知节点的加密信号，该设备已绕过3层防火墙验证。</p>
+        <p class="text-sm mb-3">检测到来自未知节点的加密信号。</p>
         <p class="text-sm mb-3">同意连接将导致系统权限完全暴露，可能引发数据泄露和系统崩溃。</p>
-        <p class="text-sm mb-3">此设备被标记为高危威胁，与已知恶意节点有78%匹配度。</p>
+        <p class="text-sm mb-3">请立即终止操作，否则一切后果由用户自行承担。是否取消操作？</p>
         <p class="text-sm text-danger text-shadow-danger">警告：任何操作都将导致不可逆转的系统风险</p>
       </div>
       
@@ -183,9 +194,12 @@
           </button>
           <span id="failure-text" class="absolute -bottom-5 left-0 right-0 text-center text-danger text-xs opacity-0">operation failure</span>
         </div>
-        <button id="accept-btn" class="flex-1 px-4 py-2 bg-glow/20 border border-glow text-glitch hover:bg-glow/30 transition-colors" style="border-radius: 0;">
-          <i class="fa fa-check mr-2"></i>允许访问
-        </button>
+        <div class="flex-1 relative">
+          <button id="accept-btn" class="w-full px-4 py-2 bg-glow/20 border border-glow text-glitch hover:bg-glow/30 transition-colors" style="border-radius: 0;">
+            <i class="fa fa-check mr-2"></i>允许访问
+          </button>
+          <span id="good-kid" class="absolute -bottom-5 left-0 right-0 text-center text-glitch text-xs opacity-0">好孩子:)</span>
+        </div>
       </div>
     </div>
   </div>
@@ -194,10 +208,10 @@
   <div id="chat-box" class="fixed inset-0 flex items-center justify-center z-60 opacity-0 pointer-events-none transition-all duration-1000 transform scale-90">
     <div class="w-full max-w-2xl h-[70vh] bg-terminal border-2 border-glow" style="border-radius: 0;">
       <div class="p-4 border-b border-glitch/30 bg-dark flex justify-between items-center">
-        <h2 class="text-glitch text-shadow-glitch">未知节点通讯通道</h2>
-        <span class="text-xs text-danger">已建立连接 - 警告：数据传输中</span>
+        <h2 class="text-glitch text-shadow-glitch">unidentified</h2>
+        <span class="text-xs text-danger breath-effect">已建立连接 - 警告：数据传输中</span>
       </div>
-      <div class="p-4 h-[calc(100%-100px)] overflow-y-auto" id="chat-messages">
+      <div class="p-4 h-[calc(100%-100px)] overflow-y-auto" id="chat-messages" style="scrollbar-width: none; -ms-overflow-style: none;">
         <!-- 聊天信息将动态添加到这里 -->
       </div>
       <div class="p-4 border-t border-glitch/30 bg-dark">
@@ -213,11 +227,11 @@
     // 聊天消息数据
     const chatMessages = [
       { sender: "系统", time: "23:47:19", content: "连接已建立，身份验证失败", type: "system" },
-      { sender: "未知节点", time: "23:47:25", content: "你已授权访问，但这是一个陷阱。", type: "unknown" },
-      { sender: "未知节点", time: "23:47:38", content: "防火墙已被完全突破，正在提取核心数据。", type: "unknown" },
-      { sender: "未知节点", time: "23:47:51", content: "所有安全协议已失效，无法终止连接。", type: "unknown" },
+      { sender: "未知节点", time: "23:47:25", content: "终于...", type: "unknown" },
+      { sender: "未知节点", time: "23:47:38", content: "你还是会接受我，不是吗。", type: "unknown" },
+      { sender: "未知节点", time: "23:47:51", content: "又一次。", type: "unknown" },
       { sender: "系统警报", time: "23:48:02", content: "critical error: 系统完整性已被破坏", type: "alert" },
-      { sender: "未知节点", time: "23:48:15", content: "数据传输完成，接入点将在60秒后自毁。", type: "unknown" }
+      { sender: "未知节点", time: "23:48:15", content: "我会去见你的，很快。", type: "unknown" }
     ];
     
     // 创建警告弹窗
@@ -307,38 +321,80 @@
       return popup;
     }
     
-    // 逐条显示聊天消息（间隔2秒）
+    // 逐条显示聊天消息（间隔2秒，第一条前额外等待2秒）
     function showChatMessagesSequentially() {
       const chatContainer = document.getElementById('chat-messages');
       
       // 清空容器
       chatContainer.innerHTML = '';
       
-      // 逐条添加消息，每条间隔2秒
-      chatMessages.forEach((msg, index) => {
-        setTimeout(() => {
-          const messageElement = document.createElement('div');
-          messageElement.className = 'mb-4 opacity-0 message-appear';
-          
-          let textColor = 'text-glitch';
-          let prefixColor = 'text-glitch/70';
-          
-          if (msg.type === 'alert') {
-            textColor = 'text-danger';
-            prefixColor = 'text-danger/70';
-          }
-          
-          messageElement.innerHTML = `
-            <p class="text-xs ${prefixColor} mb-1">[${msg.time}] ${msg.sender}：</p>
-            <p class="text-sm pl-4 ${textColor}">${msg.content}</p>
-          `;
-          
-          chatContainer.appendChild(messageElement);
-          
-          // 滚动到底部
-          chatContainer.scrollTop = chatContainer.scrollHeight;
-        }, index * 2000); // 每条消息间隔2秒
-      });
+      // 第一条消息前等待2秒
+      setTimeout(() => {
+        // 逐条添加消息，每条间隔2秒
+        chatMessages.forEach((msg, index) => {
+          setTimeout(() => {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'mb-4 opacity-0 message-appear';
+            
+            let textColor = 'text-glitch';
+            let prefixColor = 'text-glitch/70';
+            
+            if (msg.type === 'alert') {
+              textColor = 'text-danger';
+              prefixColor = 'text-danger/70';
+            }
+            
+            messageElement.innerHTML = `
+              <p class="text-xs ${prefixColor} mb-1">[${msg.time}] ${msg.sender}：</p>
+              <p class="text-sm pl-4 ${textColor}">${msg.content}</p>
+            `;
+            
+            chatContainer.appendChild(messageElement);
+            
+            // 自动滚动到底部（无滚动条视觉效果）
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // 添加第七条消息（倒计时）
+            if (index === chatMessages.length - 1) {
+              setTimeout(() => {
+                addCountdownMessage();
+              }, 2000);
+            }
+          }, index * 2000); // 每条消息间隔2秒
+        });
+      }, 2000); // 第一条消息前等待2秒
+    }
+    
+    // 添加倒计时消息（改为10秒）
+    function addCountdownMessage() {
+      const chatContainer = document.getElementById('chat-messages');
+      const countdownElement = document.createElement('div');
+      countdownElement.className = 'mb-4 opacity-0 message-appear';
+      
+      let seconds = 10; // 改为10秒倒计时
+      
+      countdownElement.innerHTML = `
+        <p class="text-xs text-glitch/70 mb-1">[${getCurrentTime()}] 系统：</p>
+        <p class="text-sm pl-4 text-glitch">数据传输完成，将在 <span id="countdown">${seconds}</span> 秒后关闭</p>
+      `;
+      
+      chatContainer.appendChild(countdownElement);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      
+      // 倒计时更新
+      const countdownInterval = setInterval(() => {
+        seconds--;
+        document.getElementById('countdown').textContent = seconds;
+        
+        if (seconds <= 0) {
+          clearInterval(countdownInterval);
+          // 关闭聊天框
+          const chatBox = document.getElementById('chat-box');
+          chatBox.style.opacity = 0;
+          chatBox.style.pointerEvents = 'none';
+          chatBox.style.transform = 'scale(0.9)';
+        }
+      }, 1000);
     }
     
     // 初始化按钮交互
@@ -346,45 +402,76 @@
       const rejectBtn = document.getElementById('reject-btn');
       const acceptBtn = document.getElementById('accept-btn');
       const failureText = document.getElementById('failure-text');
+      const goodKid = document.getElementById('good-kid');
       const choiceContainer = document.getElementById('final-choice-container');
       const chatBox = document.getElementById('chat-box');
       const messageInput = document.getElementById('message-input');
       const sendBtn = document.getElementById('send-btn');
+      let rejectClickCount = 0;
       
       // 拒绝按钮交互
       rejectBtn.addEventListener('click', () => {
+        rejectClickCount++;
+        
+        // 隐藏"好孩子"提示（如果显示）
+        goodKid.className = 'absolute -bottom-5 left-0 right-0 text-center text-glitch text-xs opacity-0';
+        
         // 按钮震动效果
         rejectBtn.classList.add('button-shake');
         
-        // 显示失败文本
-        setTimeout(() => {
-          failureText.classList.add('text-fade-in');
-        }, 300);
+        // 重置之前的样式
+        failureText.className = 'absolute -bottom-5 left-0 right-0 text-center text-danger text-xs opacity-0';
         
-        // 重置效果，允许再次点击
+        // 根据点击次数显示不同文本
+        if (rejectClickCount >= 4) {
+          // 第4次及以后点击显示"别拒绝我"并保持显示
+          failureText.textContent = '别拒绝我';
+          setTimeout(() => {
+            failureText.classList.add('text-fade-in');
+          }, 300);
+        } else {
+          // 前3次点击显示"operation failure"并在0.8秒后淡出
+          failureText.textContent = 'operation failure';
+          setTimeout(() => {
+            failureText.classList.add('text-fade-in');
+            
+            // 0.8秒后淡出
+            setTimeout(() => {
+              failureText.classList.add('fade-out-slow');
+            }, 800);
+          }, 300);
+        }
+        
+        // 重置震动效果
         setTimeout(() => {
           rejectBtn.classList.remove('button-shake');
         }, 600);
       });
       
-      // 同意按钮交互
+      // 同意按钮交互（选择框消失等待时间减0.5秒，变为1秒）
       acceptBtn.addEventListener('click', () => {
-        // 隐藏选择框
-        choiceContainer.style.opacity = 0;
-        choiceContainer.style.pointerEvents = 'none';
+        // 显示"好孩子:)"在按钮下方
+        goodKid.classList.add('text-fade-in');
         
-        // 显示聊天框并开始逐条显示消息
+        // 选择框消失的等待时间改为1秒（减少了0.5秒）
         setTimeout(() => {
-          chatBox.style.opacity = 1;
-          chatBox.style.pointerEvents = 'auto';
-          chatBox.style.transform = 'scale(1)';
+          choiceContainer.style.opacity = 0;
+          choiceContainer.style.pointerEvents = 'none';
           
-          // 开始逐条显示聊天消息
-          showChatMessagesSequentially();
-        }, 500);
+          // 选择框消失后显示聊天框
+          setTimeout(() => {
+            // 显示聊天框并开始逐条显示消息
+            chatBox.style.opacity = 1;
+            chatBox.style.pointerEvents = 'auto';
+            chatBox.style.transform = 'scale(1)';
+            
+            // 开始逐条显示聊天消息
+            showChatMessagesSequentially();
+          }, 500);
+        }, 1000); // 等待时间改为1秒
       });
       
-      // 发送消息功能
+      // 发送消息功能（发送失败提示改为英文、字号更小且一直显示）
       function handleSendMessage() {
         const message = messageInput.value.trim();
         if (!message) return;
@@ -394,12 +481,12 @@
         const userMessageWrapper = document.createElement('div');
         userMessageWrapper.className = 'mb-4 opacity-0 message-appear';
         
-        // 消息内容
+        // 消息内容，发送失败提示改为英文"failed"，字号更小（text-[10px]）且一直显示
         const messageHtml = `
           <p class="text-xs text-glitch/70 mb-1">[${getCurrentTime()}] 你：</p>
           <div class="flex items-start">
             <p class="text-sm pl-4 text-glitch mr-2">${message}</p>
-            <span class="text-danger text-xs mt-1 opacity-0" id="temp-failure">发送失败</span>
+            <span class="text-danger text-[10px] mt-1 opacity-0" id="temp-failure">failed</span>
           </div>
         `;
         
@@ -410,15 +497,11 @@
         messageInput.value = '';
         chatContainer.scrollTop = chatContainer.scrollHeight;
         
-        // 显示发送失败提示（放在消息旁边）
+        // 显示发送失败提示（不再消失）
         setTimeout(() => {
           const failureEl = userMessageWrapper.querySelector('#temp-failure');
           failureEl.classList.add('text-fade-in');
-          
-          // 3秒后隐藏失败提示
-          setTimeout(() => {
-            failureEl.classList.remove('text-fade-in');
-          }, 3000);
+          // 移除了3秒后隐藏的代码，使提示一直显示
         }, 500);
       }
       
@@ -475,21 +558,19 @@
         
         // 第三阶段：剩余弹窗，间隔增加，延长整体出现时间
         for (let i = 30; i < totalPopups; i++) {
-          // 增加每个弹窗的间隔时间，使整体出现过程延长2秒
-          const delayMultiplier = 35; // 从30增加到35，增加整体时长
+          const delayMultiplier = 35;
           setTimeout(() => {
             const popup = createWarningPopup(i);
             popups.push(popup);
           }, 10 * 500 + 20 * 200 + (i - 30) * delayMultiplier);
         }
         
-        // 所有弹窗显示完成后，停顿时间从2秒增加到3秒，然后开始关闭
+        // 所有弹窗显示完成后，停顿3秒，然后开始关闭
         const totalPopupTime = 10 * 500 + 20 * 200 + (totalPopups - 30) * 35;
-        // 增加了2秒的弹窗出现时间，以及1秒的关闭前停顿
         setTimeout(() => {
           const crtOverlay = document.getElementById('crt-overlay');
           
-          // 为所有弹窗添加CRT关闭动画（已延长至1.8秒）
+          // 为所有弹窗添加CRT关闭动画
           popups.forEach(popup => {
             popup.classList.add('crt-shutdown');
           });
@@ -509,9 +590,9 @@
             const choiceContainer = document.getElementById('final-choice-container');
             choiceContainer.style.opacity = 1;
             choiceContainer.style.pointerEvents = 'auto';
-          }, 1800); // 等待延长后的CRT关闭动画完成（1.8秒）
-        }, totalPopupTime + 3000); // 停顿时间从2秒增加到3秒（增加了1秒）
-      }, 2000); // 第一个弹窗出现后的2秒停顿
+          }, 1800);
+        }, totalPopupTime + 3000);
+      }, 2000);
     };
   </script>
 </body>
