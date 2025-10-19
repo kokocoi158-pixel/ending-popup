@@ -181,31 +181,37 @@
   <!-- 音频元素 -->
   <audio id="long-sound" preload="auto">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E5%BC%B9%E7%AA%97.mp3" type="audio/mpeg">
-  </audio>
+    您的浏览器不支持音频元素。
+   ></audio>
   
   <audio id="close-popup-sound" preload="auto">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/a_computer_pop-up_wi-1760803508255.mp3" type="audio/mpeg">
-   </audio>
+    您的浏览器不支持音频元素。
+   ></audio>
    
   <!-- 连接请求弹框音效元素 -->
   <audio id="connection-request-sound" preload="auto" volume="0.1">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E9%93%BE%E6%8E%A5%E8%AF%B7%E6%B1%82.mp3" type="audio/mpeg">
-   </audio>
+    您的浏览器不支持音频元素。
+   ></audio>
   
   <!-- 错误选择（拒绝连接）音效元素 -->
   <audio id="error-selection-sound" preload="auto" volume="0.1">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E9%94%99%E8%AF%AF%E9%80%89%E9%A1%B9.mp3" type="audio/mpeg">
-   </audio>
+    您的浏览器不支持音频元素。
+   ></audio>
   
   <!-- 正确选择（允许访问）音效元素 -->
   <audio id="correct-selection-sound" preload="auto" volume="0.1">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E6%AD%A3%E7%A1%AE%E9%80%89%E9%A1%B9.mp3" type="audio/mpeg">
-   </audio>
+    您的浏览器不支持音频元素。
+   ></audio>
   
-  <!-- 信息接收音效元素 -->
+  <!-- 新增信息接收音效元素 - 注意：当前链接存在文件类型不支持问题，音量默认0.1 -->
   <audio id="message-receive-sound" preload="auto" volume="0.1">
-    <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E4%BF%A1%E6%81%AF%E5%8F%91%E9%80%89.mp3" type="audio/mpeg">
-   </audio>
+    <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E4%BF%A1%E6%81%AF%E5%8F%91%E9%80%81.mp3" type="audio/mpeg">
+    您的浏览器不支持音频元素。
+   ></audio>
   
   <!-- 视觉效果元素 -->
   <div class="scanline"></div>
@@ -215,8 +221,8 @@
   <div class="fixed inset-0 static-overlay pointer-events-none tv-flicker"></div>
   <div class="fixed inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none"></div>
   
-  <!-- 弹窗容器 - 修复核心：确保初始可见性 -->
-  <div id="popup-container" class="relative w-full h-screen z-30"></div>
+  <!-- 弹窗容器 -->
+  <div id="popup-container" class="relative w-full h-screen"></div>
   
   <!-- CRT关闭效果覆盖层 -->
   <div id="crt-overlay" class="fixed inset-0 bg-black opacity-0 pointer-events-none transition-opacity duration-800 z-40"></div>
@@ -271,163 +277,323 @@
   </div>
 
   <script>
-    // 桌面浏览器兼容性修复标记
-    const isDesktop = !/Mobi|Android|iPhone/i.test(navigator.userAgent);
+    // 音频配置
+    const AUDIO_VOLUMES = {
+      long: 0.3,                // 第一段音效音量
+      closePopup: 0.05,          // 第二段音效音量
+      connectionRequest: 0.1,    // 连接请求音效音量
+      errorSelection: 0.1,       // 错误选择音效音量
+      correctSelection: 0.1,     // 正确选择音效音量
+      messageReceive: 0.1        // 新增信息接收音效音量
+    };
     
-    // 等待DOM完全加载后执行
-    document.addEventListener('DOMContentLoaded', function() {
-      // 音频配置
-      const AUDIO_VOLUMES = {
-        long: 0.3,
-        closePopup: 0.05,
-        connectionRequest: 0.1,
-        errorSelection: 0.1,
-        correctSelection: 0.1,
-        messageReceive: 0.1
-      };
+    // 音频上下文与状态管理
+    let audioContext;
+    let soundPlayed = false;
+    let closeSoundPlayed = false;
+    let connectionSoundPlayed = false;
+    
+    // 初始化音频上下文并设置音量
+    function initAudio() {
+      // 获取音频元素
+      const longSound = document.getElementById('long-sound');
+      const closeSound = document.getElementById('close-popup-sound');
+      const connectionSound = document.getElementById('connection-request-sound');
+      const errorSound = document.getElementById('error-selection-sound');
+      const correctSound = document.getElementById('correct-selection-sound');
+      const messageSound = document.getElementById('message-receive-sound'); // 新增
       
-      // 音频上下文与状态管理
-      let audioContext;
-      let soundPlayed = false;
-      let closeSoundPlayed = false;
-      let connectionSoundPlayed = false;
+      // 使用JavaScript强制设置音量
+      longSound.volume = AUDIO_VOLUMES.long;
+      closeSound.volume = AUDIO_VOLUMES.closePopup;
+      connectionSound.volume = AUDIO_VOLUMES.connectionRequest;
+      errorSound.volume = AUDIO_VOLUMES.errorSelection;
+      correctSound.volume = AUDIO_VOLUMES.correctSelection;
+      messageSound.volume = AUDIO_VOLUMES.messageReceive; // 新增
       
-      // 确保DOM元素存在的安全获取函数
-      function getElementSafe(id) {
-        const element = document.getElementById(id);
-        if (!element) {
-          console.error(`元素 #${id} 未找到`);
-        }
-        return element;
+      // 初始化音频上下文
+      if (typeof AudioContext !== 'undefined' && !audioContext) {
+        audioContext = new AudioContext();
+      } else if (typeof webkitAudioContext !== 'undefined' && !audioContext) {
+        audioContext = new webkitAudioContext();
       }
       
-      // 初始化音频上下文并设置音量
-      function initAudio() {
-        // 安全获取音频元素
-        const longSound = getElementSafe('long-sound');
-        const closeSound = getElementSafe('close-popup-sound');
-        const connectionSound = getElementSafe('connection-request-sound');
-        const errorSound = getElementSafe('error-selection-sound');
-        const correctSound = getElementSafe('correct-selection-sound');
-        const messageSound = getElementSafe('message-receive-sound');
-        
-        // 仅在元素存在时设置音量
-        if (longSound) longSound.volume = AUDIO_VOLUMES.long;
-        if (closeSound) closeSound.volume = AUDIO_VOLUMES.closePopup;
-        if (connectionSound) connectionSound.volume = AUDIO_VOLUMES.connectionRequest;
-        if (errorSound) errorSound.volume = AUDIO_VOLUMES.errorSelection;
-        if (correctSound) correctSound.volume = AUDIO_VOLUMES.correctSelection;
-        if (messageSound) messageSound.volume = AUDIO_VOLUMES.messageReceive;
-        
-        // 初始化音频上下文（处理浏览器兼容性）
-        try {
-          if (typeof AudioContext !== 'undefined' && !audioContext) {
-            audioContext = new AudioContext();
-          } else if (typeof webkitAudioContext !== 'undefined' && !audioContext) {
-            audioContext = new webkitAudioContext();
-          }
-        } catch (e) {
-          console.warn('音频上下文初始化失败:', e);
-        }
-      }
+      // 预加载音频
+      longSound.load();
+      closeSound.load();
+      connectionSound.load();
+      errorSound.load();
+      correctSound.load();
+      messageSound.load(); // 新增
+    }
 
-      // 播放音效的通用安全函数
-      function playSound(soundId, volumeKey) {
-        const sound = getElementSafe(soundId);
-        if (!sound) return;
+    // 播放第一段长音效
+    function playLongSound() {
+      if (soundPlayed) return;
+      
+      const sound = document.getElementById('long-sound');
+      
+      try {
+        sound.volume = AUDIO_VOLUMES.long;
+        sound.currentTime = 0;
         
-        try {
-          sound.currentTime = 0;
-          sound.volume = AUDIO_VOLUMES[volumeKey] || 0.1;
-          
-          sound.play().catch(e => {
-            console.log(`音效 ${soundId} 播放失败，尝试降级方案:`, e);
-            if (audioContext) {
-              fallbackPlay(sound, AUDIO_VOLUMES[volumeKey]);
-            }
-          });
-        } catch (e) {
-          console.error(`播放音效 ${soundId} 错误:`, e);
-        }
-      }
-
-      // 播放第一段长音效
-      function playLongSound() {
-        if (soundPlayed) return;
-        playSound('long-sound', 'long');
+        sound.play().catch(e => {
+          console.log('长音效播放失败，尝试降级方案:', e);
+          fallbackPlay(sound, AUDIO_VOLUMES.long, () => soundPlayed = true);
+        });
         soundPlayed = true;
+      } catch (e) {
+        console.error('播放长音效错误:', e);
       }
+    }
 
-      // 播放第二段关闭弹窗音效
-      function playClosePopupSound() {
-        if (closeSoundPlayed) return;
-        playSound('close-popup-sound', 'closePopup');
-        closeSoundPlayed = true;
-      }
-
-      // 播放连接请求弹框音效
-      function playConnectionRequestSound() {
-        if (connectionSoundPlayed) return;
-        playSound('connection-request-sound', 'connectionRequest');
-        connectionSoundPlayed = true;
-      }
-
-      // 播放错误选择（拒绝连接）音效
-      function playErrorSelectionSound() {
-        playSound('error-selection-sound', 'errorSelection');
-      }
-
-      // 播放正确选择（允许访问）音效
-      function playCorrectSelectionSound() {
-        playSound('correct-selection-sound', 'correctSelection');
-      }
-
-      // 播放信息接收音效
-      function playMessageReceiveSound() {
-        playSound('message-receive-sound', 'messageReceive');
-      }
-
-      // 音频播放降级方案
-      function fallbackPlay(audioElement, volume) {
-        if (!audioContext) return;
+    // 播放第二段关闭弹窗音效
+    function playClosePopupSound() {
+      if (closeSoundPlayed) return;
+      
+      const sound = document.getElementById('close-popup-sound');
+      
+      try {
+        sound.volume = AUDIO_VOLUMES.closePopup;
+        sound.currentTime = 0;
         
-        fetch(audioElement.src)
-          .then(response => {
-            if (!response.ok) throw new Error(`加载音频失败: ${response.status}`);
-            return response.arrayBuffer();
-          })
-          .then(buffer => audioContext.decodeAudioData(buffer))
-          .then(audioBuffer => {
-            const source = audioContext.createBufferSource();
-            const gainNode = audioContext.createGain();
-            gainNode.gain.value = volume || 0.1;
-            
-            source.buffer = audioBuffer;
-            source.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            source.start(0);
-          })
-          .catch(e => console.error('降级播放失败:', e));
+        sound.play().catch(e => {
+          console.log('关闭弹窗音效播放失败，尝试降级方案:', e);
+          fallbackPlay(sound, AUDIO_VOLUMES.closePopup, () => closeSoundPlayed = true);
+        });
+        closeSoundPlayed = true;
+      } catch (e) {
+        console.error('播放关闭弹窗音效错误:', e);
       }
+    }
 
-      // 停止第一段音效
-      function stopLongSound() {
-        const sound = getElementSafe('long-sound');
-        if (sound) {
-          sound.pause();
-          sound.currentTime = 0;
+    // 播放连接请求弹框音效
+    function playConnectionRequestSound() {
+      if (connectionSoundPlayed) return;
+      
+      const sound = document.getElementById('connection-request-sound');
+      
+      try {
+        sound.volume = AUDIO_VOLUMES.connectionRequest;
+        sound.currentTime = 0;
+        
+        sound.play().catch(e => {
+          console.log('连接请求音效播放失败，尝试降级方案:', e);
+          fallbackPlay(sound, AUDIO_VOLUMES.connectionRequest, () => connectionSoundPlayed = true);
+        });
+        connectionSoundPlayed = true;
+      } catch (e) {
+        console.error('播放连接请求音效错误:', e);
+      }
+    }
+
+    // 播放错误选择（拒绝连接）音效
+    function playErrorSelectionSound() {
+      const sound = document.getElementById('error-selection-sound');
+      
+      try {
+        sound.currentTime = 0;
+        sound.volume = AUDIO_VOLUMES.errorSelection;
+        
+        sound.play().catch(e => {
+          console.log('错误选择音效播放失败，尝试降级方案:', e);
+          if (audioContext) {
+            fetch(sound.src)
+              .then(response => response.arrayBuffer())
+              .then(buffer => audioContext.decodeAudioData(buffer))
+              .then(audioBuffer => {
+                const source = audioContext.createBufferSource();
+                const gainNode = audioContext.createGain();
+                gainNode.gain.value = AUDIO_VOLUMES.errorSelection;
+                
+                source.buffer = audioBuffer;
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                source.start(0);
+              })
+              .catch(e => console.error('降级播放错误选择音效失败:', e));
+          }
+        });
+      } catch (e) {
+        console.error('播放错误选择音效错误:', e);
+      }
+    }
+
+    // 播放正确选择（允许访问）音效
+    function playCorrectSelectionSound() {
+      const sound = document.getElementById('correct-selection-sound');
+      
+      try {
+        sound.currentTime = 0;
+        sound.volume = AUDIO_VOLUMES.correctSelection;
+        
+        sound.play().catch(e => {
+          console.log('正确选择音效播放失败，尝试降级方案:', e);
+          if (audioContext) {
+            fetch(sound.src)
+              .then(response => response.arrayBuffer())
+              .then(buffer => audioContext.decodeAudioData(buffer))
+              .then(audioBuffer => {
+                const source = audioContext.createBufferSource();
+                const gainNode = audioContext.createGain();
+                gainNode.gain.value = AUDIO_VOLUMES.correctSelection;
+                
+                source.buffer = audioBuffer;
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                source.start(0);
+              })
+              .catch(e => console.error('降级播放正确选择音效失败:', e));
+          }
+        });
+      } catch (e) {
+        console.error('播放正确选择音效错误:', e);
+      }
+    }
+
+    // 新增：播放信息接收音效
+    function playMessageReceiveSound() {
+      const sound = document.getElementById('message-receive-sound');
+      
+      try {
+        sound.currentTime = 0;
+        sound.volume = AUDIO_VOLUMES.messageReceive;
+        
+        sound.play().catch(e => {
+          console.log('信息接收音效播放失败（当前链接可能存在文件类型问题），尝试降级方案:', e);
+          if (audioContext) {
+            fetch(sound.src)
+              .then(response => response.arrayBuffer())
+              .then(buffer => audioContext.decodeAudioData(buffer))
+              .then(audioBuffer => {
+                const source = audioContext.createBufferSource();
+                const gainNode = audioContext.createGain();
+                gainNode.gain.value = AUDIO_VOLUMES.messageReceive;
+                
+                source.buffer = audioBuffer;
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                source.start(0);
+              })
+              .catch(e => console.error('降级播放信息接收音效失败:', e));
+          }
+        });
+      } catch (e) {
+        console.error('播放信息接收音效错误:', e);
+      }
+    }
+
+    // 音频播放降级方案
+    function fallbackPlay(audioElement, volume, onPlayed) {
+      if (!audioContext) return;
+      
+      fetch(audioElement.src)
+        .then(response => response.arrayBuffer())
+        .then(buffer => audioContext.decodeAudioData(buffer))
+        .then(audioBuffer => {
+          const source = audioContext.createBufferSource();
+          const gainNode = audioContext.createGain();
+          gainNode.gain.value = volume;
+          
+          source.buffer = audioBuffer;
+          source.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          source.start(0);
+          onPlayed && onPlayed();
+        })
+        .catch(e => console.error('降级播放失败:', e));
+    }
+
+    // 停止第一段音效
+    function stopLongSound() {
+      const sound = document.getElementById('long-sound');
+      sound.pause();
+      sound.currentTime = 0;
+    }
+
+    // 页面加载完成后初始化
+    window.onload = function() {
+      // 初始化音频系统
+      initAudio();
+      
+      // 获取元素引用
+      const initialWindow = document.getElementById('initial-window');
+      const backBtn = document.getElementById('back-btn');
+      const continueBtn = document.getElementById('continue-btn');
+      const choiceContainer = document.getElementById('final-choice-container');
+      const rejectBtn = document.getElementById('reject-btn');
+      const acceptBtn = document.getElementById('accept-btn');
+      
+      // 初始窗口设置
+      initialWindow.style.zIndex = "9999";
+      initialWindow.style.display = "flex";
+      
+      // 返回按钮交互
+      backBtn.addEventListener('click', function() {
+        this.style.backgroundColor = 'rgba(255, 0, 102, 0.4)';
+        setTimeout(() => this.style.backgroundColor = '', 200);
+      });
+      
+      // 继续按钮交互
+      continueBtn.addEventListener('click', function() {
+        this.classList.add('button-shake');
+        
+        setTimeout(() => {
+          initialWindow.classList.add('fade-out');
+          
+          setTimeout(() => {
+            initialWindow.style.display = 'none';
+            setTimeout(startOriginalEffects, 3000);
+          }, 300);
+        }, 300);
+      });
+      
+      // 拒绝连接按钮点击事件
+      rejectBtn.addEventListener('click', function() {
+        playErrorSelectionSound();
+      });
+      
+      // 允许访问按钮点击事件
+      acceptBtn.addEventListener('click', function() {
+        playCorrectSelectionSound();
+      });
+      
+      // 键盘支持
+      continueBtn.tabIndex = 0;
+      continueBtn.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          continueBtn.click();
         }
-      }
-
+      });
+      
+      // 获取音频播放权限
+      document.addEventListener('click', function activateAudio() {
+        if (audioContext && audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+        document.removeEventListener('click', activateAudio);
+      });
+      
+      // 监听连接请求弹框显示事件
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach(mutation => {
+          if (mutation.attributeName === 'style') {
+            const opacity = choiceContainer.style.opacity;
+            const pointerEvents = choiceContainer.style.pointerEvents;
+            if (opacity === '1' && pointerEvents === 'auto' && !connectionSoundPlayed) {
+              playConnectionRequestSound();
+              observer.disconnect();
+            }
+          }
+        });
+      });
+      
+      observer.observe(choiceContainer, { attributes: true, attributeFilter: ['style'] });
+      
       // 主效果逻辑
       function startOriginalEffects() {
-        // 桌面浏览器特殊处理：强制显示弹窗容器
-        const popupContainer = getElementSafe('popup-container');
-        if (popupContainer && isDesktop) {
-          popupContainer.style.display = 'block';
-          popupContainer.style.visibility = 'visible';
-        }
-
         const chatMessages = [
           { sender: "系统", time: "23:47:19", content: "连接已建立，身份验证失败", type: "system" },
           { sender: "未知节点", time: "23:47:25", content: "终于...", type: "unknown" },
@@ -439,10 +605,8 @@
         
         let firstPopupCreated = false;
         
-        // 创建警告弹窗（桌面版增加渲染强制刷新）
+        // 创建警告弹窗
         function createWarningPopup(index) {
-          if (!popupContainer) return null;
-          
           const popupTypes = [
             { 
               title: "未授权访问", 
@@ -480,12 +644,9 @@
           const zIndex = 10 + Math.floor(Math.random() * 40);
           const popup = document.createElement('div');
           
-          // 桌面版强制设置基础样式，避免渲染问题
           popup.className = `absolute bg-terminal border border-${type.color}/50 transition-all duration-300 z-${zIndex}`;
           popup.style.width = `${200 + Math.random() * 150}px`;
           popup.style.opacity = 0.7 + Math.random() * 0.3;
-          popup.style.display = 'block'; // 强制显示
-          popup.style.visibility = 'visible'; // 强制可见
           
           popup.innerHTML = `
             <div class="bg-dark px-3 py-1.5 flex justify-between items-center text-xs border-b border-${type.color}/30">
@@ -508,18 +669,14 @@
             </div>
           `;
           
-          popupContainer.appendChild(popup);
+          document.getElementById('popup-container').appendChild(popup);
           
-          // 桌面浏览器特殊处理：强制回流刷新
-          if (isDesktop) {
-            popup.offsetHeight; // 触发重绘
-          }
-          
-          // 设置随机位置（确保在可视区域内）
-          const maxX = window.innerWidth - popup.offsetWidth - 20;
-          const maxY = window.innerHeight - popup.offsetHeight - 20;
-          const x = Math.max(10, Math.floor(Math.random() * maxX));
-          const y = Math.max(10, Math.floor(Math.random() * maxY));
+          // 设置随机位置
+          const container = document.getElementById('popup-container');
+          const maxX = container.offsetWidth - popup.offsetWidth;
+          const maxY = container.offsetHeight - popup.offsetHeight;
+          const x = Math.max(0, Math.floor(Math.random() * maxX));
+          const y = Math.max(0, Math.floor(Math.random() * maxY));
           popup.style.left = `${x}px`;
           popup.style.top = `${y}px`;
           
@@ -531,11 +688,7 @@
           popup.querySelectorAll('.popup-btn').forEach(btn => {
             btn.addEventListener('click', function() {
               popup.classList.add('fade-out');
-              setTimeout(() => {
-                if (popupContainer.contains(popup)) {
-                  popupContainer.removeChild(popup);
-                }
-              }, 300);
+              setTimeout(() => popup.remove(), 300);
             });
           });
           
@@ -548,11 +701,9 @@
           return popup;
         }
         
-        // 显示聊天消息
+        // 显示聊天消息 - 新增播放信息接收音效
         function showChatMessagesSequentially() {
-          const chatContainer = getElementSafe('chat-messages');
-          if (!chatContainer) return;
-          
+          const chatContainer = document.getElementById('chat-messages');
           chatContainer.innerHTML = '';
           
           setTimeout(() => {
@@ -577,14 +728,10 @@
                 chatContainer.appendChild(messageElement);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
                 
-                // 桌面版强制刷新
-                if (isDesktop) {
-                  messageElement.offsetHeight;
-                }
-                
-                // 播放信息接收音效
+                // 每条消息显示时播放信息接收音效
                 playMessageReceiveSound();
                 
+                // 添加倒计时消息
                 if (index === chatMessages.length - 1) {
                   setTimeout(addCountdownMessage, 2000);
                 }
@@ -593,11 +740,9 @@
           }, 2000);
         }
         
-        // 添加倒计时消息
+        // 添加倒计时消息 - 也播放信息接收音效
         function addCountdownMessage() {
-          const chatContainer = getElementSafe('chat-messages');
-          if (!chatContainer) return;
-          
+          const chatContainer = document.getElementById('chat-messages');
           const countdownElement = document.createElement('div');
           countdownElement.className = 'mb-4 opacity-0 message-appear';
           
@@ -611,100 +756,79 @@
           chatContainer.appendChild(countdownElement);
           chatContainer.scrollTop = chatContainer.scrollHeight;
           
-          // 播放信息接收音效
+          // 倒计时消息也播放信息接收音效
           playMessageReceiveSound();
           
           const countdownInterval = setInterval(() => {
             seconds--;
-            const countdownEl = document.getElementById('countdown');
-            if (countdownEl) countdownEl.textContent = seconds;
+            document.getElementById('countdown').textContent = seconds;
             
             if (seconds <= 0) {
               clearInterval(countdownInterval);
-              const chatBox = getElementSafe('chat-box');
-              if (chatBox) {
-                chatBox.style.opacity = 0;
-                chatBox.style.pointerEvents = 'none';
-                chatBox.style.transform = 'scale(0.9)';
-              }
+              const chatBox = document.getElementById('chat-box');
+              chatBox.style.opacity = 0;
+              chatBox.style.pointerEvents = 'none';
+              chatBox.style.transform = 'scale(0.9)';
             }
           }, 1000);
         }
         
         // 按钮交互
         function initButtonInteractions() {
-          const rejectBtn = getElementSafe('reject-btn');
-          const acceptBtn = getElementSafe('accept-btn');
-          const failureText = getElementSafe('failure-text');
-          const goodKid = getElementSafe('good-kid');
-          const choiceContainer = getElementSafe('final-choice-container');
-          const chatBox = getElementSafe('chat-box');
-          const messageInput = getElementSafe('message-input');
-          const sendBtn = getElementSafe('send-btn');
+          const rejectBtn = document.getElementById('reject-btn');
+          const acceptBtn = document.getElementById('accept-btn');
+          const failureText = document.getElementById('failure-text');
+          const goodKid = document.getElementById('good-kid');
+          const choiceContainer = document.getElementById('final-choice-container');
+          const chatBox = document.getElementById('chat-box');
+          const messageInput = document.getElementById('message-input');
+          const sendBtn = document.getElementById('send-btn');
           let rejectClickCount = 0;
           
-          // 拒绝按钮交互
-          if (rejectBtn) {
-            rejectBtn.addEventListener('click', () => {
-              rejectClickCount++;
-              if (goodKid) goodKid.className = 'absolute -bottom-5 left-0 right-0 text-center text-glitch text-xs opacity-0';
-              rejectBtn.classList.add('button-shake');
-              if (failureText) failureText.className = 'absolute -bottom-5 left-0 right-0 text-center text-danger text-xs opacity-0';
-              
-              if (rejectClickCount >= 4 && failureText) {
-                failureText.textContent = '别拒绝我';
-                setTimeout(() => failureText.classList.add('text-fade-in'), 300);
-              } else if (failureText) {
-                failureText.textContent = 'operation failure';
-                setTimeout(() => {
-                  failureText.classList.add('text-fade-in');
-                  setTimeout(() => failureText.classList.add('fade-out-slow'), 800);
-                }, 300);
-              }
-              
-              setTimeout(() => rejectBtn.classList.remove('button-shake'), 600);
-              playErrorSelectionSound();
-            });
-          }
+          // 拒绝按钮原有逻辑
+          rejectBtn.addEventListener('click', () => {
+            rejectClickCount++;
+            goodKid.className = 'absolute -bottom-5 left-0 right-0 text-center text-glitch text-xs opacity-0';
+            rejectBtn.classList.add('button-shake');
+            failureText.className = 'absolute -bottom-5 left-0 right-0 text-center text-danger text-xs opacity-0';
+            
+            if (rejectClickCount >= 4) {
+              failureText.textContent = '别拒绝我';
+              setTimeout(() => failureText.classList.add('text-fade-in'), 300);
+            } else {
+              failureText.textContent = 'operation failure';
+              setTimeout(() => {
+                failureText.classList.add('text-fade-in');
+                setTimeout(() => failureText.classList.add('fade-out-slow'), 800);
+              }, 300);
+            }
+            
+            setTimeout(() => rejectBtn.classList.remove('button-shake'), 600);
+          });
           
-          // 允许访问按钮交互
-          if (acceptBtn) {
-            acceptBtn.addEventListener('click', () => {
-              if (goodKid) goodKid.classList.add('text-fade-in');
+          // 允许访问按钮原有逻辑
+          acceptBtn.addEventListener('click', () => {
+            goodKid.classList.add('text-fade-in');
+            
+            setTimeout(() => {
+              choiceContainer.style.opacity = 0;
+              choiceContainer.style.pointerEvents = 'none';
               
               setTimeout(() => {
-                if (choiceContainer) {
-                  choiceContainer.style.opacity = 0;
-                  choiceContainer.style.pointerEvents = 'none';
-                }
-                
-                setTimeout(() => {
-                  if (chatBox) {
-                    chatBox.style.opacity = 1;
-                    chatBox.style.pointerEvents = 'auto';
-                    chatBox.style.transform = 'scale(1)';
-                    
-                    // 桌面版强制刷新
-                    if (isDesktop) {
-                      chatBox.offsetHeight;
-                    }
-                  }
-                  showChatMessagesSequentially();
-                }, 500);
-              }, 1000);
-              playCorrectSelectionSound();
-            });
-          }
+                chatBox.style.opacity = 1;
+                chatBox.style.pointerEvents = 'auto';
+                chatBox.style.transform = 'scale(1)';
+                showChatMessagesSequentially();
+              }, 500);
+            }, 1000);
+          });
           
-          // 发送消息功能
+          // 发送消息功能 - 发送时也播放信息接收音效
           function handleSendMessage() {
-            if (!messageInput) return;
             const message = messageInput.value.trim();
             if (!message) return;
             
-            const chatContainer = getElementSafe('chat-messages');
-            if (!chatContainer) return;
-            
+            const chatContainer = document.getElementById('chat-messages');
             const userMessageWrapper = document.createElement('div');
             userMessageWrapper.className = 'mb-4 opacity-0 message-appear';
             
@@ -720,21 +844,18 @@
             messageInput.value = '';
             chatContainer.scrollTop = chatContainer.scrollHeight;
             
-            // 播放信息接收音效
+            // 用户发送消息时也播放信息接收音效
             playMessageReceiveSound();
             
             setTimeout(() => {
-              const tempFailure = userMessageWrapper.querySelector('#temp-failure');
-              if (tempFailure) tempFailure.classList.add('text-fade-in');
+              userMessageWrapper.querySelector('#temp-failure').classList.add('text-fade-in');
             }, 500);
           }
           
-          if (sendBtn) sendBtn.addEventListener('click', handleSendMessage);
-          if (messageInput) {
-            messageInput.addEventListener('keypress', (e) => {
-              if (e.key === 'Enter') handleSendMessage();
-            });
-          }
+          sendBtn.addEventListener('click', handleSendMessage);
+          messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSendMessage();
+          });
         }
         
         // 获取当前时间
@@ -743,177 +864,66 @@
           return `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
         }
         
-        // 初始化弹窗效果（减少桌面版弹窗数量，避免渲染压力）
+        // 初始化弹窗效果
         (function init() {
-          // 桌面版减少弹窗数量，避免浏览器渲染压力过大
-          const totalPopups = isDesktop ? 40 + Math.floor(Math.random() * 11) : 80 + Math.floor(Math.random() * 21);
+          const totalPopups = 80 + Math.floor(Math.random() * 21);
           const popups = [];
           
           initButtonInteractions();
           
-          // 第一个弹窗（延迟创建，确保DOM准备就绪）
+          // 第一个弹窗
+          const firstPopup = createWarningPopup(0);
+          popups.push(firstPopup);
+          
+          // 后续弹窗
           setTimeout(() => {
-            const firstPopup = createWarningPopup(0);
-            if (firstPopup) popups.push(firstPopup);
-            
-            // 后续弹窗（分阶段创建）
-            setTimeout(() => {
-              // 第一阶段弹窗
-              for (let i = 1; i < 10; i++) {
-                setTimeout(() => {
-                  const popup = createWarningPopup(i);
-                  if (popup) popups.push(popup);
-                }, i * 500);
-              }
-              
-              // 第二阶段弹窗
-              for (let i = 10; i < 30; i++) {
-                setTimeout(() => {
-                  const popup = createWarningPopup(i);
-                  if (popup) popups.push(popup);
-                }, 10 * 500 + (i - 10) * 200);
-              }
-              
-              // 第三阶段弹窗
-              for (let i = 30; i < totalPopups; i++) {
-                const delayMultiplier = 35;
-                setTimeout(() => {
-                  const popup = createWarningPopup(i);
-                  if (popup) popups.push(popup);
-                }, 10 * 500 + 20 * 200 + (i - 30) * delayMultiplier);
-              }
-              
-              // 弹窗关闭阶段
-              const totalPopupTime = 10 * 500 + 20 * 200 + (totalPopups - 30) * 35;
+            // 第一阶段弹窗
+            for (let i = 1; i < 10; i++) {
               setTimeout(() => {
-                stopLongSound();
-                playClosePopupSound();
-                
-                const crtOverlay = getElementSafe('crt-overlay');
-                popups.forEach(popup => {
-                  if (popup) {
-                    popup.classList.add('crt-shutdown');
-                  }
-                });
-                
-                setTimeout(() => {
-                  if (crtOverlay) crtOverlay.style.opacity = 0.7;
-                }, 300);
-                
-                setTimeout(() => {
-                  if (popupContainer) popupContainer.innerHTML = '';
-                  if (crtOverlay) crtOverlay.style.opacity = 0;
-                  
-                  const choiceContainer = getElementSafe('final-choice-container');
-                  if (choiceContainer) {
-                    choiceContainer.style.opacity = 1;
-                    choiceContainer.style.pointerEvents = 'auto';
-                    
-                    // 桌面版强制刷新
-                    if (isDesktop) {
-                      choiceContainer.offsetHeight;
-                    }
-                  }
-                }, 1800);
-              }, totalPopupTime + 3000);
-            }, 2000);
-          }, 500); // 桌面版额外增加延迟，确保渲染就绪
+                const popup = createWarningPopup(i);
+                popups.push(popup);
+              }, i * 500);
+            }
+            
+            // 第二阶段弹窗
+            for (let i = 10; i < 30; i++) {
+              setTimeout(() => {
+                const popup = createWarningPopup(i);
+                popups.push(popup);
+              }, 10 * 500 + (i - 10) * 200);
+            }
+            
+            // 第三阶段弹窗
+            for (let i = 30; i < totalPopups; i++) {
+              const delayMultiplier = 35;
+              setTimeout(() => {
+                const popup = createWarningPopup(i);
+                popups.push(popup);
+              }, 10 * 500 + 20 * 200 + (i - 30) * delayMultiplier);
+            }
+            
+            // 弹窗关闭阶段
+            const totalPopupTime = 10 * 500 + 20 * 200 + (totalPopups - 30) * 35;
+            setTimeout(() => {
+              stopLongSound();
+              playClosePopupSound();
+              
+              const crtOverlay = document.getElementById('crt-overlay');
+              popups.forEach(popup => popup.classList.add('crt-shutdown'));
+              
+              setTimeout(() => crtOverlay.style.opacity = 0.7, 300);
+              
+              setTimeout(() => {
+                document.getElementById('popup-container').innerHTML = '';
+                crtOverlay.style.opacity = 0;
+                document.getElementById('final-choice-container').style.opacity = 1;
+                document.getElementById('final-choice-container').style.pointerEvents = 'auto';
+              }, 1800);
+            }, totalPopupTime + 3000);
+          }, 2000);
         })();
       }
-      
-      // 初始化音频
-      initAudio();
-      
-      // 获取初始窗口元素
-      const initialWindow = getElementSafe('initial-window');
-      const backBtn = getElementSafe('back-btn');
-      const continueBtn = getElementSafe('continue-btn');
-      const choiceContainer = getElementSafe('final-choice-container');
-      
-      // 设置初始窗口
-      if (initialWindow) {
-        initialWindow.style.zIndex = "9999";
-        initialWindow.style.display = "flex";
-      }
-      
-      // 返回按钮交互
-      if (backBtn) {
-        backBtn.addEventListener('click', function() {
-          this.style.backgroundColor = 'rgba(255, 0, 102, 0.4)';
-          setTimeout(() => this.style.backgroundColor = '', 200);
-        });
-      }
-      
-      // 继续按钮交互（核心修复：增加桌面版延迟和强制刷新）
-      if (continueBtn) {
-        continueBtn.addEventListener('click', function() {
-          this.classList.add('button-shake');
-          
-          // 桌面版增加额外延迟，确保DOM清理完成
-          const delay = isDesktop ? 600 : 300;
-          
-          setTimeout(() => {
-            if (initialWindow) {
-              initialWindow.classList.add('fade-out');
-              
-              setTimeout(() => {
-                if (initialWindow) {
-                  // 彻底移除初始窗口，避免遮挡
-                  initialWindow.remove();
-                  
-                  // 桌面版强制刷新视图
-                  if (isDesktop) {
-                    document.body.offsetHeight; // 触发重绘
-                  }
-                  
-                  // 启动主效果
-                  setTimeout(() => {
-                    startOriginalEffects();
-                  }, isDesktop ? 300 : 100);
-                }
-              }, 300);
-            }
-          }, delay);
-        });
-      }
-      
-      // 键盘支持
-      if (continueBtn) {
-        continueBtn.tabIndex = 0;
-        continueBtn.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            continueBtn.click();
-          }
-        });
-      }
-      
-      // 获取音频播放权限
-      document.addEventListener('click', function activateAudio() {
-        if (audioContext && audioContext.state === 'suspended') {
-          audioContext.resume().catch(e => console.log('音频上下文恢复失败:', e));
-        }
-        document.removeEventListener('click', activateAudio);
-      }, { once: true });
-      
-      // 监听连接请求弹框显示事件
-      if (choiceContainer) {
-        const observer = new MutationObserver((mutations) => {
-          mutations.forEach(mutation => {
-            if (mutation.attributeName === 'style') {
-              const opacity = choiceContainer.style.opacity;
-              const pointerEvents = choiceContainer.style.pointerEvents;
-              if (opacity === '1' && pointerEvents === 'auto' && !connectionSoundPlayed) {
-                playConnectionRequestSound();
-                observer.disconnect();
-              }
-            }
-          });
-        });
-        
-        observer.observe(choiceContainer, { attributes: true, attributeFilter: ['style'] });
-      }
-    });
+    };
   </script>
 </body>
 </html>
