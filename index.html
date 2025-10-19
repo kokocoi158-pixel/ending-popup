@@ -51,6 +51,8 @@
         width: 100%;
         height: 6px;
         animation: scan 2s linear infinite;
+        pointer-events: none;
+        z-index: 30;
       }
       .tv-flicker {
         animation: tvFlicker 0.1s infinite alternate;
@@ -76,6 +78,8 @@
       .static-overlay {
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.3'/%3E%3C/svg%3E");
         background-repeat: repeat;
+        pointer-events: none;
+        z-index: 20;
       }
       .button-shake {
         animation: buttonShake 0.5s cubic-bezier(.36,.07,.19,.97) both;
@@ -165,7 +169,11 @@
         <p class="text-xs text-glitch/80">初始化程序 #001</p>
       </div>
       
-      <div class="my-8 h-24"></div>
+      <div class="my-8 h-24 flex items-center justify-center">
+        <div class="w-3/4 h-1 bg-dark rounded-full overflow-hidden">
+          <div id="progress-bar" class="h-full bg-glow w-0 transition-all duration-1000"></div>
+        </div>
+      </div>
       
       <div class="flex justify-between mt-6" style="gap: 1rem;">
         <button id="back-btn" class="flex-1 px-4 py-2 bg-danger/20 border border-danger text-danger hover:bg-danger/30 transition-colors" style="border-radius: 0;">
@@ -182,47 +190,47 @@
   <audio id="long-sound" preload="auto">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E5%BC%B9%E7%AA%97.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
-   ></audio>
+   </audio>
   
   <audio id="close-popup-sound" preload="auto">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/a_computer_pop-up_wi-1760803508255.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
-   > 
-  
+   </audio>
+   
   <!-- 连接请求弹框音效元素 -->
   <audio id="connection-request-sound" preload="auto" volume="0.1">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E9%93%BE%E6%8E%A5%E8%AF%B7%E6%B1%82.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
-   > 
+   </audio>
   
   <!-- 错误选择（拒绝连接）音效元素 -->
   <audio id="error-selection-sound" preload="auto" volume="0.04">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E9%94%99%E8%AF%AF%E9%80%89%E9%A1%B9.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
-   > <RichMediaReference>
+   </audio>
   
   <!-- 正确选择（允许访问）音效元素 -->
   <audio id="correct-selection-sound" preload="auto" volume="0.05">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E6%AD%A3%E7%A1%AE%E9%80%89%E9%A1%B9.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
-   > <RichMediaReference>
+   </audio>
   
   <!-- 信息接收音效元素 -->
   <audio id="message-receive-sound" preload="auto" volume="0.3">
     <source src="https://assets.mixkit.co/sfx/preview/mixkit-message-alert-tone-2870.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
-   > 
+   </audio>
   
-  <!-- 视觉效果元素 -->
+  <!-- 视觉效果元素 - 修复：确保z-index正确且始终可见 -->
   <div class="scanline"></div>
   <div class="scanline" style="animation-delay: 0.5s;"></div>
   <div class="scanline" style="animation-delay: 1s;"></div>
   
-  <div class="fixed inset-0 static-overlay pointer-events-none tv-flicker"></div>
-  <div class="fixed inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none"></div>
+  <div class="fixed inset-0 static-overlay tv-flicker"></div>
+  <div class="fixed inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none z-10"></div>
   
   <!-- 弹窗容器 -->
-  <div id="popup-container" class="relative w-full h-screen"></div>
+  <div id="popup-container" class="relative w-full h-screen z-15"></div>
   
   <!-- CRT关闭效果覆盖层 -->
   <div id="crt-overlay" class="fixed inset-0 bg-black opacity-0 pointer-events-none transition-opacity duration-800 z-40"></div>
@@ -323,7 +331,7 @@
       }
     }
 
-    // 播放信息接收音效（使用Promise确保可靠播放）
+    // 播放信息接收音效
     function playMessageReceiveSound() {
       return new Promise((resolve) => {
         const sound = document.getElementById('message-receive-sound');
@@ -339,12 +347,10 @@
         // 尝试播放
         sound.play()
           .then(() => {
-            console.log('消息音效播放成功');
             resolve();
           })
           .catch(e => {
             console.log('消息音效播放失败，尝试恢复:', e);
-            // 尝试恢复音频上下文
             if (audioContext && audioContext.state === 'suspended') {
               audioContext.resume().then(() => {
                 sound.play().then(() => resolve()).catch(() => resolve());
@@ -404,6 +410,11 @@
 
     // 页面加载完成后初始化
     window.onload = function() {
+      // 显示进度条动画，增强用户体验
+      setTimeout(() => {
+        document.getElementById('progress-bar').style.width = '100%';
+      }, 500);
+      
       // 初始化音频
       initAudio();
       
@@ -412,7 +423,7 @@
       const backBtn = document.getElementById('back-btn');
       const continueBtn = document.getElementById('continue-btn');
       
-      // 确保继续按钮可点击（核心修复）
+      // 继续按钮点击事件（核心修复）
       if (continueBtn) {
         continueBtn.addEventListener('click', function() {
           this.classList.add('button-shake');
@@ -421,8 +432,16 @@
             initialWindow.classList.add('fade-out');
             
             setTimeout(() => {
-              initialWindow.style.display = 'none';
-              setTimeout(startOriginalEffects, 3000);
+              // 确保初始窗口只是隐藏而不是移除，避免影响其他元素
+              initialWindow.style.visibility = 'hidden';
+              initialWindow.style.opacity = '0';
+              initialWindow.style.pointerEvents = 'none';
+              
+              // 立即显示噪点背景（修复消失问题）
+              document.querySelector('.static-overlay').style.display = 'block';
+              
+              // 启动主效果
+              startOriginalEffects();
             }, 300);
           }, 300);
         });
@@ -447,7 +466,7 @@
         });
       }
       
-      // 激活音频上下文（解决自动播放限制）
+      // 激活音频上下文
       document.addEventListener('click', function activateAudio() {
         if (audioContext && audioContext.state === 'suspended') {
           audioContext.resume();
@@ -457,6 +476,12 @@
       
       // 主效果逻辑
       function startOriginalEffects() {
+        // 确保视觉效果元素可见
+        document.querySelectorAll('.scanline').forEach(line => {
+          line.style.display = 'block';
+        });
+        document.querySelector('.static-overlay').style.display = 'block';
+        
         const chatMessages = [
           { sender: "系统", time: "23:47:19", content: "连接已建立，身份验证失败", type: "system" },
           { sender: "未知节点", time: "23:47:25", content: "你找到我了，终于...", type: "unknown" },
@@ -471,7 +496,7 @@
         
         let firstPopupCreated = false;
         
-        // 创建警告弹窗
+        // 创建警告弹窗（修复：确保弹窗能正常显示）
         function createWarningPopup(index) {
           const popupTypes = [
             { title: "未授权访问", message: "检测到异常接入点\nIP: 192.168.XXX.XXX\n正在追踪来源...", icon: "fa-exclamation-triangle", color: "glitch" },
@@ -486,6 +511,7 @@
           popup.className = `absolute bg-terminal border border-${type.color}/50 transition-all duration-300 z-${10 + Math.floor(Math.random() * 40)}`;
           popup.style.width = `${200 + Math.random() * 150}px`;
           popup.style.opacity = 0.7 + Math.random() * 0.3;
+          popup.style.display = 'block'; // 强制显示
           
           popup.innerHTML = `
             <div class="bg-dark px-3 py-1.5 flex justify-between items-center text-xs border-b border-${type.color}/30">
@@ -536,7 +562,7 @@
           return popup;
         }
         
-        // 按顺序显示聊天消息（带音效）
+        // 按顺序显示聊天消息
         async function showChatMessagesSequentially() {
           const chatContainer = document.getElementById('chat-messages');
           chatContainer.innerHTML = '';
@@ -711,21 +737,23 @@
           return `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
         }
         
-        // 初始化弹窗效果
+        // 初始化弹窗效果（修复：确保弹窗能正常创建和显示）
         (function init() {
-          const totalPopups = 80 + Math.floor(Math.random() * 21);
+          const totalPopups = 20; // 临时减少弹窗数量，加快测试流程
           const popups = [];
           
           initButtonInteractions();
           
-          // 第一个弹窗
-          const firstPopup = createWarningPopup(0);
-          popups.push(firstPopup);
+          // 第一个弹窗 - 立即创建以确保能显示
+          setTimeout(() => {
+            const firstPopup = createWarningPopup(0);
+            popups.push(firstPopup);
+          }, 500);
           
           // 后续弹窗
           setTimeout(() => {
             // 第一阶段弹窗
-            for (let i = 1; i < 10; i++) {
+            for (let i = 1; i < 5; i++) {
               setTimeout(() => {
                 const popup = createWarningPopup(i);
                 popups.push(popup);
@@ -733,24 +761,15 @@
             }
             
             // 第二阶段弹窗
-            for (let i = 10; i < 30; i++) {
+            for (let i = 5; i < 10; i++) {
               setTimeout(() => {
                 const popup = createWarningPopup(i);
                 popups.push(popup);
-              }, 10 * 500 + (i - 10) * 200);
-            }
-            
-            // 第三阶段弹窗
-            for (let i = 30; i < totalPopups; i++) {
-              const delayMultiplier = 35;
-              setTimeout(() => {
-                const popup = createWarningPopup(i);
-                popups.push(popup);
-              }, 10 * 500 + 20 * 200 + (i - 30) * delayMultiplier);
+              }, 5 * 500 + (i - 5) * 200);
             }
             
             // 弹窗关闭阶段
-            const totalPopupTime = 10 * 500 + 20 * 200 + (totalPopups - 30) * 35;
+            const totalPopupTime = 5 * 500 + 5 * 200;
             setTimeout(() => {
               stopLongSound();
               playClosePopupSound();
@@ -763,12 +782,14 @@
               setTimeout(() => {
                 document.getElementById('popup-container').innerHTML = '';
                 crtOverlay.style.opacity = 0;
-                document.getElementById('final-choice-container').style.opacity = 1;
-                document.getElementById('final-choice-container').style.pointerEvents = 'auto';
+                // 显示最终选择框（核心修复：确保提示栏能跳出）
+                const choiceContainer = document.getElementById('final-choice-container');
+                choiceContainer.style.opacity = 1;
+                choiceContainer.style.pointerEvents = 'auto';
                 playConnectionRequestSound();
               }, 1800);
-            }, totalPopupTime + 3000);
-          }, 2000);
+            }, totalPopupTime + 1000);
+          }, 1000);
         })();
       }
     };
