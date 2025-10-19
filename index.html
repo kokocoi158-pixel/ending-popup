@@ -182,28 +182,34 @@
   <audio id="long-sound" preload="auto">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E5%BC%B9%E7%AA%97.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
-  </audio>
+   ></audio>
   
   <audio id="close-popup-sound" preload="auto">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/a_computer_pop-up_wi-1760803508255.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
    ></audio>
    
-  <!-- 连接请求弹框音效元素 - 音量已调整为0.1 -->
+  <!-- 连接请求弹框音效元素 -->
   <audio id="connection-request-sound" preload="auto" volume="0.1">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E9%93%BE%E6%8E%A5%E8%AF%B7%E6%B1%82.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
    ></audio>
   
-  <!-- 错误选择（拒绝连接）音效元素 - 音量已调整为0.1 -->
+  <!-- 错误选择（拒绝连接）音效元素 -->
   <audio id="error-selection-sound" preload="auto" volume="0.1">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E9%94%99%E8%AF%AF%E9%80%89%E9%A1%B9.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
    ></audio>
   
-  <!-- 新增正确选择（允许访问）音效元素 - 注意：当前链接存在文件类型不支持问题，音量设置为0.1 -->
+  <!-- 正确选择（允许访问）音效元素 -->
   <audio id="correct-selection-sound" preload="auto" volume="0.1">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E6%AD%A3%E7%A1%AE%E9%80%89%E9%A1%B9.mp3" type="audio/mpeg">
+    您的浏览器不支持音频元素。
+   ></audio>
+  
+  <!-- 新增信息接收音效元素 - 注意：当前链接存在文件类型不支持问题，音量默认0.1 -->
+  <audio id="message-receive-sound" preload="auto" volume="0.1">
+    <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E4%BF%A1%E6%81%AF%E5%8F%91%E9%80%81.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
    ></audio>
   
@@ -271,13 +277,14 @@
   </div>
 
   <script>
-    // 音频配置 - 按需求调整音量
+    // 音频配置
     const AUDIO_VOLUMES = {
-      long: 0.3,                // 第一段音效音量（保持不变）
-      closePopup: 0.05,          // 第二段音效音量（保持不变）
-      connectionRequest: 0.1,    // 连接请求音效音量（调整为0.1）
-      errorSelection: 0.1,       // 错误选择音效音量（调整为0.1）
-      correctSelection: 0.1      // 新增正确选择音效音量（设置为0.1）
+      long: 0.3,                // 第一段音效音量
+      closePopup: 0.05,          // 第二段音效音量
+      connectionRequest: 0.1,    // 连接请求音效音量
+      errorSelection: 0.1,       // 错误选择音效音量
+      correctSelection: 0.1,     // 正确选择音效音量
+      messageReceive: 0.1        // 新增信息接收音效音量
     };
     
     // 音频上下文与状态管理
@@ -293,14 +300,16 @@
       const closeSound = document.getElementById('close-popup-sound');
       const connectionSound = document.getElementById('connection-request-sound');
       const errorSound = document.getElementById('error-selection-sound');
-      const correctSound = document.getElementById('correct-selection-sound'); // 新增
+      const correctSound = document.getElementById('correct-selection-sound');
+      const messageSound = document.getElementById('message-receive-sound'); // 新增
       
-      // 使用JavaScript强制设置音量，确保生效
+      // 使用JavaScript强制设置音量
       longSound.volume = AUDIO_VOLUMES.long;
       closeSound.volume = AUDIO_VOLUMES.closePopup;
       connectionSound.volume = AUDIO_VOLUMES.connectionRequest;
       errorSound.volume = AUDIO_VOLUMES.errorSelection;
-      correctSound.volume = AUDIO_VOLUMES.correctSelection; // 新增
+      correctSound.volume = AUDIO_VOLUMES.correctSelection;
+      messageSound.volume = AUDIO_VOLUMES.messageReceive; // 新增
       
       // 初始化音频上下文
       if (typeof AudioContext !== 'undefined' && !audioContext) {
@@ -314,7 +323,8 @@
       closeSound.load();
       connectionSound.load();
       errorSound.load();
-      correctSound.load(); // 新增
+      correctSound.load();
+      messageSound.load(); // 新增
     }
 
     // 播放第一段长音效
@@ -409,7 +419,7 @@
       }
     }
 
-    // 新增：播放正确选择（允许访问）音效
+    // 播放正确选择（允许访问）音效
     function playCorrectSelectionSound() {
       const sound = document.getElementById('correct-selection-sound');
       
@@ -418,7 +428,7 @@
         sound.volume = AUDIO_VOLUMES.correctSelection;
         
         sound.play().catch(e => {
-          console.log('正确选择音效播放失败（当前链接可能存在文件类型问题），尝试降级方案:', e);
+          console.log('正确选择音效播放失败，尝试降级方案:', e);
           if (audioContext) {
             fetch(sound.src)
               .then(response => response.arrayBuffer())
@@ -438,6 +448,38 @@
         });
       } catch (e) {
         console.error('播放正确选择音效错误:', e);
+      }
+    }
+
+    // 新增：播放信息接收音效
+    function playMessageReceiveSound() {
+      const sound = document.getElementById('message-receive-sound');
+      
+      try {
+        sound.currentTime = 0;
+        sound.volume = AUDIO_VOLUMES.messageReceive;
+        
+        sound.play().catch(e => {
+          console.log('信息接收音效播放失败（当前链接可能存在文件类型问题），尝试降级方案:', e);
+          if (audioContext) {
+            fetch(sound.src)
+              .then(response => response.arrayBuffer())
+              .then(buffer => audioContext.decodeAudioData(buffer))
+              .then(audioBuffer => {
+                const source = audioContext.createBufferSource();
+                const gainNode = audioContext.createGain();
+                gainNode.gain.value = AUDIO_VOLUMES.messageReceive;
+                
+                source.buffer = audioBuffer;
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                source.start(0);
+              })
+              .catch(e => console.error('降级播放信息接收音效失败:', e));
+          }
+        });
+      } catch (e) {
+        console.error('播放信息接收音效错误:', e);
       }
     }
 
@@ -481,7 +523,7 @@
       const continueBtn = document.getElementById('continue-btn');
       const choiceContainer = document.getElementById('final-choice-container');
       const rejectBtn = document.getElementById('reject-btn');
-      const acceptBtn = document.getElementById('accept-btn'); // 新增获取允许访问按钮
+      const acceptBtn = document.getElementById('accept-btn');
       
       // 初始窗口设置
       initialWindow.style.zIndex = "9999";
@@ -507,12 +549,12 @@
         }, 300);
       });
       
-      // 拒绝连接按钮点击事件 - 播放错误选择音效
+      // 拒绝连接按钮点击事件
       rejectBtn.addEventListener('click', function() {
         playErrorSelectionSound();
       });
       
-      // 新增：允许访问按钮点击事件 - 播放正确选择音效
+      // 允许访问按钮点击事件
       acceptBtn.addEventListener('click', function() {
         playCorrectSelectionSound();
       });
@@ -534,7 +576,7 @@
         document.removeEventListener('click', activateAudio);
       });
       
-      // 监听连接请求弹框显示事件，播放音效
+      // 监听连接请求弹框显示事件
       const observer = new MutationObserver((mutations) => {
         mutations.forEach(mutation => {
           if (mutation.attributeName === 'style') {
@@ -659,7 +701,7 @@
           return popup;
         }
         
-        // 显示聊天消息
+        // 显示聊天消息 - 新增播放信息接收音效
         function showChatMessagesSequentially() {
           const chatContainer = document.getElementById('chat-messages');
           chatContainer.innerHTML = '';
@@ -686,6 +728,10 @@
                 chatContainer.appendChild(messageElement);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
                 
+                // 每条消息显示时播放信息接收音效
+                playMessageReceiveSound();
+                
+                // 添加倒计时消息
                 if (index === chatMessages.length - 1) {
                   setTimeout(addCountdownMessage, 2000);
                 }
@@ -694,7 +740,7 @@
           }, 2000);
         }
         
-        // 添加倒计时消息
+        // 添加倒计时消息 - 也播放信息接收音效
         function addCountdownMessage() {
           const chatContainer = document.getElementById('chat-messages');
           const countdownElement = document.createElement('div');
@@ -709,6 +755,9 @@
           
           chatContainer.appendChild(countdownElement);
           chatContainer.scrollTop = chatContainer.scrollHeight;
+          
+          // 倒计时消息也播放信息接收音效
+          playMessageReceiveSound();
           
           const countdownInterval = setInterval(() => {
             seconds--;
@@ -774,7 +823,7 @@
             }, 1000);
           });
           
-          // 发送消息功能
+          // 发送消息功能 - 发送时也播放信息接收音效
           function handleSendMessage() {
             const message = messageInput.value.trim();
             if (!message) return;
@@ -794,6 +843,9 @@
             chatContainer.appendChild(userMessageWrapper);
             messageInput.value = '';
             chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // 用户发送消息时也播放信息接收音效
+            playMessageReceiveSound();
             
             setTimeout(() => {
               userMessageWrapper.querySelector('#temp-failure').classList.add('text-fade-in');
