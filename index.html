@@ -795,7 +795,7 @@
             rejectBtn.classList.add('button-shake');
             failureText.className = 'absolute -bottom-5 left-0 right-0 text-center text-danger text-xs opacity-0';
             
-            if (rejectClickCount >= 4) {
+            if (rejectClickCount >= 3) {
               failureText.textContent = '别拒绝我';
               setTimeout(() => failureText.classList.add('text-fade-in'), 300);
             } else {
@@ -930,5 +930,6 @@
   </script>
 </body>
 </html>
+
 
 
