@@ -204,7 +204,7 @@
   
   <!-- 信息接收音效元素 -->
   <audio id="message-receive-sound" preload="auto" volume="0.1">
-    <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E4%BF%A1%E6%81%AF%E5%8F%91%E9%80%81.mp3" type="audio/mpeg">
+    <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E4%BF%A1%E6%81%AF%E5%8F%91%E9%80%89.mp3" type="audio/mpeg">
    </audio>
   
   <!-- 视觉效果元素 -->
@@ -215,8 +215,8 @@
   <div class="fixed inset-0 static-overlay pointer-events-none tv-flicker"></div>
   <div class="fixed inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none"></div>
   
-  <!-- 弹窗容器 -->
-  <div id="popup-container" class="relative w-full h-screen"></div>
+  <!-- 弹窗容器 - 修复核心：确保初始可见性 -->
+  <div id="popup-container" class="relative w-full h-screen z-30"></div>
   
   <!-- CRT关闭效果覆盖层 -->
   <div id="crt-overlay" class="fixed inset-0 bg-black opacity-0 pointer-events-none transition-opacity duration-800 z-40"></div>
@@ -271,6 +271,9 @@
   </div>
 
   <script>
+    // 桌面浏览器兼容性修复标记
+    const isDesktop = !/Mobi|Android|iPhone/i.test(navigator.userAgent);
+    
     // 等待DOM完全加载后执行
     document.addEventListener('DOMContentLoaded', function() {
       // 音频配置
@@ -293,7 +296,7 @@
       function getElementSafe(id) {
         const element = document.getElementById(id);
         if (!element) {
-          console.error(`元素 #${id} 未找到，可能导致功能异常`);
+          console.error(`元素 #${id} 未找到`);
         }
         return element;
       }
@@ -324,7 +327,7 @@
             audioContext = new webkitAudioContext();
           }
         } catch (e) {
-          console.warn('音频上下文初始化失败，部分音效可能无法播放:', e);
+          console.warn('音频上下文初始化失败:', e);
         }
       }
 
@@ -338,7 +341,7 @@
           sound.volume = AUDIO_VOLUMES[volumeKey] || 0.1;
           
           sound.play().catch(e => {
-            console.log(`音效 ${soundId} 直接播放失败，尝试降级方案:`, e);
+            console.log(`音效 ${soundId} 播放失败，尝试降级方案:`, e);
             if (audioContext) {
               fallbackPlay(sound, AUDIO_VOLUMES[volumeKey]);
             }
@@ -418,6 +421,13 @@
 
       // 主效果逻辑
       function startOriginalEffects() {
+        // 桌面浏览器特殊处理：强制显示弹窗容器
+        const popupContainer = getElementSafe('popup-container');
+        if (popupContainer && isDesktop) {
+          popupContainer.style.display = 'block';
+          popupContainer.style.visibility = 'visible';
+        }
+
         const chatMessages = [
           { sender: "系统", time: "23:47:19", content: "连接已建立，身份验证失败", type: "system" },
           { sender: "未知节点", time: "23:47:25", content: "终于...", type: "unknown" },
@@ -428,10 +438,8 @@
         ];
         
         let firstPopupCreated = false;
-        const popupContainer = getElementSafe('popup-container');
-        if (!popupContainer) return;
         
-        // 创建警告弹窗
+        // 创建警告弹窗（桌面版增加渲染强制刷新）
         function createWarningPopup(index) {
           if (!popupContainer) return null;
           
@@ -472,9 +480,12 @@
           const zIndex = 10 + Math.floor(Math.random() * 40);
           const popup = document.createElement('div');
           
+          // 桌面版强制设置基础样式，避免渲染问题
           popup.className = `absolute bg-terminal border border-${type.color}/50 transition-all duration-300 z-${zIndex}`;
           popup.style.width = `${200 + Math.random() * 150}px`;
           popup.style.opacity = 0.7 + Math.random() * 0.3;
+          popup.style.display = 'block'; // 强制显示
+          popup.style.visibility = 'visible'; // 强制可见
           
           popup.innerHTML = `
             <div class="bg-dark px-3 py-1.5 flex justify-between items-center text-xs border-b border-${type.color}/30">
@@ -499,7 +510,12 @@
           
           popupContainer.appendChild(popup);
           
-          // 设置随机位置（避免超出屏幕）
+          // 桌面浏览器特殊处理：强制回流刷新
+          if (isDesktop) {
+            popup.offsetHeight; // 触发重绘
+          }
+          
+          // 设置随机位置（确保在可视区域内）
           const maxX = window.innerWidth - popup.offsetWidth - 20;
           const maxY = window.innerHeight - popup.offsetHeight - 20;
           const x = Math.max(10, Math.floor(Math.random() * maxX));
@@ -560,6 +576,11 @@
                 
                 chatContainer.appendChild(messageElement);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
+                
+                // 桌面版强制刷新
+                if (isDesktop) {
+                  messageElement.offsetHeight;
+                }
                 
                 // 播放信息接收音效
                 playMessageReceiveSound();
@@ -662,6 +683,11 @@
                     chatBox.style.opacity = 1;
                     chatBox.style.pointerEvents = 'auto';
                     chatBox.style.transform = 'scale(1)';
+                    
+                    // 桌面版强制刷新
+                    if (isDesktop) {
+                      chatBox.offsetHeight;
+                    }
                   }
                   showChatMessagesSequentially();
                 }, 500);
@@ -717,73 +743,81 @@
           return `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
         }
         
-        // 初始化弹窗效果
+        // 初始化弹窗效果（减少桌面版弹窗数量，避免渲染压力）
         (function init() {
-          const totalPopups = 80 + Math.floor(Math.random() * 21);
+          // 桌面版减少弹窗数量，避免浏览器渲染压力过大
+          const totalPopups = isDesktop ? 40 + Math.floor(Math.random() * 11) : 80 + Math.floor(Math.random() * 21);
           const popups = [];
           
           initButtonInteractions();
           
-          // 第一个弹窗
-          const firstPopup = createWarningPopup(0);
-          if (firstPopup) popups.push(firstPopup);
-          
-          // 后续弹窗（分阶段创建，避免一次性创建过多导致性能问题）
+          // 第一个弹窗（延迟创建，确保DOM准备就绪）
           setTimeout(() => {
-            // 第一阶段弹窗
-            for (let i = 1; i < 10; i++) {
-              setTimeout(() => {
-                const popup = createWarningPopup(i);
-                if (popup) popups.push(popup);
-              }, i * 500);
-            }
+            const firstPopup = createWarningPopup(0);
+            if (firstPopup) popups.push(firstPopup);
             
-            // 第二阶段弹窗
-            for (let i = 10; i < 30; i++) {
-              setTimeout(() => {
-                const popup = createWarningPopup(i);
-                if (popup) popups.push(popup);
-              }, 10 * 500 + (i - 10) * 200);
-            }
-            
-            // 第三阶段弹窗
-            for (let i = 30; i < totalPopups; i++) {
-              const delayMultiplier = 35;
-              setTimeout(() => {
-                const popup = createWarningPopup(i);
-                if (popup) popups.push(popup);
-              }, 10 * 500 + 20 * 200 + (i - 30) * delayMultiplier);
-            }
-            
-            // 弹窗关闭阶段
-            const totalPopupTime = 10 * 500 + 20 * 200 + (totalPopups - 30) * 35;
+            // 后续弹窗（分阶段创建）
             setTimeout(() => {
-              stopLongSound();
-              playClosePopupSound();
+              // 第一阶段弹窗
+              for (let i = 1; i < 10; i++) {
+                setTimeout(() => {
+                  const popup = createWarningPopup(i);
+                  if (popup) popups.push(popup);
+                }, i * 500);
+              }
               
-              const crtOverlay = getElementSafe('crt-overlay');
-              popups.forEach(popup => {
-                if (popup && !popup.isRemoved) {
-                  popup.classList.add('crt-shutdown');
-                }
-              });
+              // 第二阶段弹窗
+              for (let i = 10; i < 30; i++) {
+                setTimeout(() => {
+                  const popup = createWarningPopup(i);
+                  if (popup) popups.push(popup);
+                }, 10 * 500 + (i - 10) * 200);
+              }
               
+              // 第三阶段弹窗
+              for (let i = 30; i < totalPopups; i++) {
+                const delayMultiplier = 35;
+                setTimeout(() => {
+                  const popup = createWarningPopup(i);
+                  if (popup) popups.push(popup);
+                }, 10 * 500 + 20 * 200 + (i - 30) * delayMultiplier);
+              }
+              
+              // 弹窗关闭阶段
+              const totalPopupTime = 10 * 500 + 20 * 200 + (totalPopups - 30) * 35;
               setTimeout(() => {
-                if (crtOverlay) crtOverlay.style.opacity = 0.7;
-              }, 300);
-              
-              setTimeout(() => {
-                if (popupContainer) popupContainer.innerHTML = '';
-                if (crtOverlay) crtOverlay.style.opacity = 0;
+                stopLongSound();
+                playClosePopupSound();
                 
-                const choiceContainer = getElementSafe('final-choice-container');
-                if (choiceContainer) {
-                  choiceContainer.style.opacity = 1;
-                  choiceContainer.style.pointerEvents = 'auto';
-                }
-              }, 1800);
-            }, totalPopupTime + 3000);
-          }, 2000);
+                const crtOverlay = getElementSafe('crt-overlay');
+                popups.forEach(popup => {
+                  if (popup) {
+                    popup.classList.add('crt-shutdown');
+                  }
+                });
+                
+                setTimeout(() => {
+                  if (crtOverlay) crtOverlay.style.opacity = 0.7;
+                }, 300);
+                
+                setTimeout(() => {
+                  if (popupContainer) popupContainer.innerHTML = '';
+                  if (crtOverlay) crtOverlay.style.opacity = 0;
+                  
+                  const choiceContainer = getElementSafe('final-choice-container');
+                  if (choiceContainer) {
+                    choiceContainer.style.opacity = 1;
+                    choiceContainer.style.pointerEvents = 'auto';
+                    
+                    // 桌面版强制刷新
+                    if (isDesktop) {
+                      choiceContainer.offsetHeight;
+                    }
+                  }
+                }, 1800);
+              }, totalPopupTime + 3000);
+            }, 2000);
+          }, 500); // 桌面版额外增加延迟，确保渲染就绪
         })();
       }
       
@@ -810,10 +844,13 @@
         });
       }
       
-      // 继续按钮交互（核心修复点：确保点击后能正确执行后续逻辑）
+      // 继续按钮交互（核心修复：增加桌面版延迟和强制刷新）
       if (continueBtn) {
         continueBtn.addEventListener('click', function() {
           this.classList.add('button-shake');
+          
+          // 桌面版增加额外延迟，确保DOM清理完成
+          const delay = isDesktop ? 600 : 300;
           
           setTimeout(() => {
             if (initialWindow) {
@@ -821,15 +858,22 @@
               
               setTimeout(() => {
                 if (initialWindow) {
-                  initialWindow.style.display = 'none';
-                  // 使用setTimeout确保DOM更新完成
+                  // 彻底移除初始窗口，避免遮挡
+                  initialWindow.remove();
+                  
+                  // 桌面版强制刷新视图
+                  if (isDesktop) {
+                    document.body.offsetHeight; // 触发重绘
+                  }
+                  
+                  // 启动主效果
                   setTimeout(() => {
                     startOriginalEffects();
-                  }, 100);
+                  }, isDesktop ? 300 : 100);
                 }
               }, 300);
             }
-          }, 300);
+          }, delay);
         });
       }
       
@@ -844,7 +888,7 @@
         });
       }
       
-      // 获取音频播放权限（修复自动播放限制问题）
+      // 获取音频播放权限
       document.addEventListener('click', function activateAudio() {
         if (audioContext && audioContext.state === 'suspended') {
           audioContext.resume().catch(e => console.log('音频上下文恢复失败:', e));
