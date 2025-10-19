@@ -196,19 +196,19 @@
    >
   
   <!-- 错误选择（拒绝连接）音效元素 -->
-  <audio id="error-selection-sound" preload="auto" volume="0.1">
+  <audio id="error-selection-sound" preload="auto" volume="0.04">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E9%94%99%E8%AF%AF%E9%80%89%E9%A1%B9.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
    >
   
   <!-- 正确选择（允许访问）音效元素 -->
-  <audio id="correct-selection-sound" preload="auto" volume="0.1">
+  <audio id="correct-selection-sound" preload="auto" volume="0.05">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E6%AD%A3%E7%A1%AE%E9%80%89%E9%A1%B9.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
    >
   
   <!-- 新增信息接收音效元素 -->
-  <audio id="message-receive-sound" preload="auto" volume="0.1">
+  <audio id="message-receive-sound" preload="auto" volume="0.05">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E4%BF%A1%E6%81%AF%E5%8F%91%E9%80%89.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
    >
@@ -284,7 +284,7 @@
       connectionRequest: 0.1,    // 连接请求音效音量
       errorSelection: 0.04,       // 错误选择音效音量
       correctSelection: 0.05,     // 正确选择音效音量
-      messageReceive: 0.05        // 信息接收音效音量
+      messageReceive: 0.05        // 新增信息接收音效音量
     };
     
     // 音频上下文与状态管理
@@ -594,7 +594,7 @@
       
       // 主效果逻辑
       function startOriginalEffects() {
-        // 消息列表（包含原6条消息+新增的第7条消息）
+        // 聊天消息列表（包含7条消息）
         const chatMessages = [
           { sender: "系统", time: "23:47:19", content: "连接已建立，身份验证失败", type: "system" },
           { sender: "未知节点", time: "23:47:25", content: "你找到我了，终于...", type: "unknown" },
@@ -602,11 +602,11 @@
           { sender: "未知节点", time: "23:47:51", content: "我想触摸到...", type: "unknown" },
           { sender: "系统警报", time: "23:48:02", content: "critical error: 系统完整性已被破坏", type: "alert" },
           { sender: "未知节点", time: "23:48:15", content: "我会去见你的，很快。", type: "unknown" },
-          { sender: "未知节点", time: "23:48:30", content: "别害怕，我只是想...", type: "unknown" } // 新增第7条消息
+          { sender: "系统", time: "23:48:30", content: "检测到异常数据写入，正在尝试拦截...", type: "system" }
         ];
         
-        // 自定义每条消息的间隔时间（单位：毫秒）
-        // 遵循规则：空白2秒→第一条→空白3秒→第二条→空白1秒→第三条→空白3秒→第四条→空白1秒→第五条→空白4秒→第六条→空白4秒→第七条
+        // 每条消息的间隔时间配置（单位：毫秒）
+        // 顺序：空白2秒 → 第一条 → 空白3秒 → 第二条 → 空白1秒 → 第三条 → 空白3秒 → 第四条 → 空白1秒 → 第五条 → 空白4秒 → 第六条 → 空白4秒 → 第七条
         const messageDelays = [2000, 3000, 1000, 3000, 1000, 4000, 4000];
         
         let firstPopupCreated = false;
@@ -707,17 +707,17 @@
           return popup;
         }
         
-        // 显示聊天消息 - 按自定义间隔时间控制
+        // 显示聊天消息 - 按指定间隔时间弹出
         function showChatMessagesSequentially() {
           const chatContainer = document.getElementById('chat-messages');
           chatContainer.innerHTML = '';
           
-          // 计算累计延迟时间（确保按顺序依次显示）
-          let totalDelay = 0;
+          // 计算每条消息的累计延迟时间
+          let cumulativeDelay = 0;
           
           chatMessages.forEach((msg, index) => {
             // 累加当前消息的延迟时间
-            totalDelay += messageDelays[index];
+            cumulativeDelay += messageDelays[index];
             
             setTimeout(() => {
               const messageElement = document.createElement('div');
@@ -746,7 +746,7 @@
               if (index === chatMessages.length - 1) {
                 setTimeout(addCountdownMessage, 2000);
               }
-            }, totalDelay);
+            }, cumulativeDelay);
           });
         }
         
