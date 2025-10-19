@@ -7,6 +7,9 @@
   <!-- 引入外部资源 -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- 引入IE兼容性补丁 -->
+  <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/classlist.js@1.1.20150312/classList.min.js"></script>
   
   <!-- Tailwind 配置 -->
   <script>
@@ -88,12 +91,22 @@
       }
     }
     
-    /* 动画关键帧定义 */
+    /* 动画关键帧定义 - 添加IE兼容前缀 */
+    @-webkit-keyframes scan {
+      0% { top: -10%; }
+      100% { top: 100%; }
+    }
     @keyframes scan {
       0% { top: -10%; }
       100% { top: 100%; }
     }
     
+    @-webkit-keyframes tvFlicker {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+      70% { opacity: 0.9; }
+      90% { opacity: 0.6; }
+    }
     @keyframes tvFlicker {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.7; }
@@ -101,11 +114,31 @@
       90% { opacity: 0.6; }
     }
     
+    @-webkit-keyframes fadeOut {
+      from { opacity: 1; transform: scale(1); }
+      to { opacity: 0; transform: scale(0.8); }
+    }
     @keyframes fadeOut {
       from { opacity: 1; transform: scale(1); }
       to { opacity: 0; transform: scale(0.8); }
     }
     
+    @-webkit-keyframes crtShutdown {
+      0% { 
+        opacity: 1; 
+        transform: scale(1);
+        filter: brightness(1);
+      }
+      50% { 
+        opacity: 0.8;
+        filter: brightness(1.2);
+      }
+      100% { 
+        opacity: 0; 
+        transform: scale(0.95);
+        filter: brightness(0) blur(2px);
+      }
+    }
     @keyframes crtShutdown {
       0% { 
         opacity: 1; 
@@ -123,21 +156,39 @@
       }
     }
     
+    @-webkit-keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
     @keyframes fadeIn {
       from { opacity: 0; transform: scale(0.9); }
       to { opacity: 1; transform: scale(1); }
     }
     
+    @-webkit-keyframes pulseSoft {
+      from { box-shadow: 0 0 10px theme('colors.glitch/50'); }
+      to { box-shadow: 0 0 20px theme('colors.glitch/80'); }
+    }
     @keyframes pulseSoft {
       from { box-shadow: 0 0 10px theme('colors.glitch/50'); }
       to { box-shadow: 0 0 20px theme('colors.glitch/80'); }
     }
     
+    @-webkit-keyframes breath {
+      from { opacity: 0.6; text-shadow: 0 0 5px theme('colors.danger/50'); }
+      to { opacity: 1; text-shadow: 0 0 10px theme('colors.danger'); }
+    }
     @keyframes breath {
       from { opacity: 0.6; text-shadow: 0 0 5px theme('colors.danger/50'); }
       to { opacity: 1; text-shadow: 0 0 10px theme('colors.danger'); }
     }
     
+    @-webkit-keyframes buttonShake {
+      10%, 90% { transform: translateX(-1px); }
+      20%, 80% { transform: translateX(2px); }
+      30%, 50%, 70% { transform: translateX(-3px); }
+      40%, 60% { transform: translateX(3px); }
+    }
     @keyframes buttonShake {
       10%, 90% { transform: translateX(-1px); }
       20%, 80% { transform: translateX(2px); }
@@ -145,11 +196,19 @@
       40%, 60% { transform: translateX(3px); }
     }
     
+    @-webkit-keyframes textFadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     @keyframes textFadeIn {
       from { opacity: 0; transform: translateY(5px); }
       to { opacity: 1; transform: translateY(0); }
     }
     
+    @-webkit-keyframes messageAppear {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     @keyframes messageAppear {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -187,31 +246,31 @@
   <audio id="close-popup-sound" preload="auto">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/a_computer_pop-up_wi-1760803508255.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
-   ></audio>
-   
+   >
+  
   <!-- 连接请求弹框音效元素 -->
   <audio id="connection-request-sound" preload="auto" volume="0.1">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E9%93%BE%E6%8E%A5%E8%AF%B7%E6%B1%82.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
-   ></audio>
+   >
   
   <!-- 错误选择（拒绝连接）音效元素 -->
   <audio id="error-selection-sound" preload="auto" volume="0.1">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E9%94%99%E8%AF%AF%E9%80%89%E9%A1%B9.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
-   ></audio>
+   >
   
   <!-- 正确选择（允许访问）音效元素 -->
   <audio id="correct-selection-sound" preload="auto" volume="0.1">
     <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E6%AD%A3%E7%A1%AE%E9%80%89%E9%A1%B9.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
-   ></audio>
+   >
   
-  <!-- 新增信息接收音效元素 - 注意：当前链接存在文件类型不支持问题，音量默认0.1 -->
+  <!-- 信息接收音效元素 -->
   <audio id="message-receive-sound" preload="auto" volume="0.1">
-    <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E4%BF%A1%E6%81%AF%E5%8F%91%E9%80%81.mp3" type="audio/mpeg">
+    <source src="https://raw.githubusercontent.com/kokocoi158-pixel/ending-popup/refs/heads/main/%E4%BF%A1%E6%81%AF%E5%8F%91%E9%80%89%E9%A1%B9.mp3" type="audio/mpeg">
     您的浏览器不支持音频元素。
-   ></audio>
+   >
   
   <!-- 视觉效果元素 -->
   <div class="scanline"></div>
@@ -277,71 +336,113 @@
   </div>
 
   <script>
+    // 兼容性检测与处理
+    (function() {
+      // 检测IE浏览器
+      var isIE = /(MSIE|Trident\/|Edge\/)/i.test(navigator.userAgent);
+      
+      // 为IE添加特殊类
+      if (isIE) {
+        document.body.classList.add('ie-browser');
+        console.log('检测到IE浏览器，启用兼容模式');
+      }
+      
+      // 为IE修复classList支持
+      if (!('classList' in document.documentElement)) {
+        console.log('为当前浏览器添加classList支持');
+      }
+      
+      // 为IE修复Promise支持
+      if (typeof Promise === 'undefined') {
+        console.log('为当前浏览器添加Promise支持');
+      }
+    })();
+
     // 音频配置
-    const AUDIO_VOLUMES = {
-      long: 0.3,                // 第一段音效音量
-      closePopup: 0.05,          // 第二段音效音量
-      connectionRequest: 0.1,    // 连接请求音效音量
-      errorSelection: 0.1,       // 错误选择音效音量
-      correctSelection: 0.1,     // 正确选择音效音量
-      messageReceive: 0.05        // 新增信息接收音效音量
+    var AUDIO_VOLUMES = {
+      long: 0.3,
+      closePopup: 0.05,
+      connectionRequest: 0.1,
+      errorSelection: 0.1,
+      correctSelection: 0.1,
+      messageReceive: 0.1
     };
     
     // 音频上下文与状态管理
-    let audioContext;
-    let soundPlayed = false;
-    let closeSoundPlayed = false;
-    let connectionSoundPlayed = false;
+    var audioContext;
+    var soundPlayed = false;
+    var closeSoundPlayed = false;
+    var connectionSoundPlayed = false;
     
     // 初始化音频上下文并设置音量
     function initAudio() {
       // 获取音频元素
-      const longSound = document.getElementById('long-sound');
-      const closeSound = document.getElementById('close-popup-sound');
-      const connectionSound = document.getElementById('connection-request-sound');
-      const errorSound = document.getElementById('error-selection-sound');
-      const correctSound = document.getElementById('correct-selection-sound');
-      const messageSound = document.getElementById('message-receive-sound'); // 新增
+      var longSound = document.getElementById('long-sound');
+      var closeSound = document.getElementById('close-popup-sound');
+      var connectionSound = document.getElementById('connection-request-sound');
+      var errorSound = document.getElementById('error-selection-sound');
+      var correctSound = document.getElementById('correct-selection-sound');
+      var messageSound = document.getElementById('message-receive-sound');
       
-      // 使用JavaScript强制设置音量
-      longSound.volume = AUDIO_VOLUMES.long;
-      closeSound.volume = AUDIO_VOLUMES.closePopup;
-      connectionSound.volume = AUDIO_VOLUMES.connectionRequest;
-      errorSound.volume = AUDIO_VOLUMES.errorSelection;
-      correctSound.volume = AUDIO_VOLUMES.correctSelection;
-      messageSound.volume = AUDIO_VOLUMES.messageReceive; // 新增
+      // 设置音量
+      if (longSound) longSound.volume = AUDIO_VOLUMES.long;
+      if (closeSound) closeSound.volume = AUDIO_VOLUMES.closePopup;
+      if (connectionSound) connectionSound.volume = AUDIO_VOLUMES.connectionRequest;
+      if (errorSound) errorSound.volume = AUDIO_VOLUMES.errorSelection;
+      if (correctSound) correctSound.volume = AUDIO_VOLUMES.correctSelection;
+      if (messageSound) messageSound.volume = AUDIO_VOLUMES.messageReceive;
       
-      // 初始化音频上下文
-      if (typeof AudioContext !== 'undefined' && !audioContext) {
-        audioContext = new AudioContext();
-      } else if (typeof webkitAudioContext !== 'undefined' && !audioContext) {
-        audioContext = new webkitAudioContext();
+      // 初始化音频上下文（IE兼容处理）
+      try {
+        if (typeof AudioContext !== 'undefined' && !audioContext) {
+          audioContext = new AudioContext();
+        } else if (typeof webkitAudioContext !== 'undefined' && !audioContext) {
+          audioContext = new webkitAudioContext();
+        } else if (isIE) {
+          console.log('IE浏览器不支持AudioContext，使用HTML5 Audio直接播放');
+        }
+      } catch (e) {
+        console.log('初始化音频上下文失败:', e);
       }
       
       // 预加载音频
-      longSound.load();
-      closeSound.load();
-      connectionSound.load();
-      errorSound.load();
-      correctSound.load();
-      messageSound.load(); // 新增
+      try {
+        if (longSound) longSound.load();
+        if (closeSound) closeSound.load();
+        if (connectionSound) connectionSound.load();
+        if (errorSound) errorSound.load();
+        if (correctSound) correctSound.load();
+        if (messageSound) messageSound.load();
+      } catch (e) {
+        console.log('预加载音频失败:', e);
+      }
     }
 
     // 播放第一段长音效
     function playLongSound() {
       if (soundPlayed) return;
       
-      const sound = document.getElementById('long-sound');
+      var sound = document.getElementById('long-sound');
+      if (!sound) return;
       
       try {
         sound.volume = AUDIO_VOLUMES.long;
         sound.currentTime = 0;
         
-        sound.play().catch(e => {
-          console.log('长音效播放失败，尝试降级方案:', e);
-          fallbackPlay(sound, AUDIO_VOLUMES.long, () => soundPlayed = true);
-        });
-        soundPlayed = true;
+        // 处理IE的播放兼容性
+        var playPromise = sound.play();
+        if (playPromise !== undefined) {
+          playPromise.then(function() {
+            soundPlayed = true;
+          }).catch(function(e) {
+            console.log('长音效播放失败，尝试降级方案:', e);
+            fallbackPlay(sound, AUDIO_VOLUMES.long, function() {
+              soundPlayed = true;
+            });
+          });
+        } else {
+          soundPlayed = true;
+        }
       } catch (e) {
         console.error('播放长音效错误:', e);
       }
@@ -351,17 +452,26 @@
     function playClosePopupSound() {
       if (closeSoundPlayed) return;
       
-      const sound = document.getElementById('close-popup-sound');
+      var sound = document.getElementById('close-popup-sound');
+      if (!sound) return;
       
       try {
         sound.volume = AUDIO_VOLUMES.closePopup;
         sound.currentTime = 0;
         
-        sound.play().catch(e => {
-          console.log('关闭弹窗音效播放失败，尝试降级方案:', e);
-          fallbackPlay(sound, AUDIO_VOLUMES.closePopup, () => closeSoundPlayed = true);
-        });
-        closeSoundPlayed = true;
+        var playPromise = sound.play();
+        if (playPromise !== undefined) {
+          playPromise.then(function() {
+            closeSoundPlayed = true;
+          }).catch(function(e) {
+            console.log('关闭弹窗音效播放失败，尝试降级方案:', e);
+            fallbackPlay(sound, AUDIO_VOLUMES.closePopup, function() {
+              closeSoundPlayed = true;
+            });
+          });
+        } else {
+          closeSoundPlayed = true;
+        }
       } catch (e) {
         console.error('播放关闭弹窗音效错误:', e);
       }
@@ -371,17 +481,26 @@
     function playConnectionRequestSound() {
       if (connectionSoundPlayed) return;
       
-      const sound = document.getElementById('connection-request-sound');
+      var sound = document.getElementById('connection-request-sound');
+      if (!sound) return;
       
       try {
         sound.volume = AUDIO_VOLUMES.connectionRequest;
         sound.currentTime = 0;
         
-        sound.play().catch(e => {
-          console.log('连接请求音效播放失败，尝试降级方案:', e);
-          fallbackPlay(sound, AUDIO_VOLUMES.connectionRequest, () => connectionSoundPlayed = true);
-        });
-        connectionSoundPlayed = true;
+        var playPromise = sound.play();
+        if (playPromise !== undefined) {
+          playPromise.then(function() {
+            connectionSoundPlayed = true;
+          }).catch(function(e) {
+            console.log('连接请求音效播放失败，尝试降级方案:', e);
+            fallbackPlay(sound, AUDIO_VOLUMES.connectionRequest, function() {
+              connectionSoundPlayed = true;
+            });
+          });
+        } else {
+          connectionSoundPlayed = true;
+        }
       } catch (e) {
         console.error('播放连接请求音效错误:', e);
       }
@@ -389,31 +508,20 @@
 
     // 播放错误选择（拒绝连接）音效
     function playErrorSelectionSound() {
-      const sound = document.getElementById('error-selection-sound');
+      var sound = document.getElementById('error-selection-sound');
+      if (!sound) return;
       
       try {
         sound.currentTime = 0;
         sound.volume = AUDIO_VOLUMES.errorSelection;
         
-        sound.play().catch(e => {
-          console.log('错误选择音效播放失败，尝试降级方案:', e);
-          if (audioContext) {
-            fetch(sound.src)
-              .then(response => response.arrayBuffer())
-              .then(buffer => audioContext.decodeAudioData(buffer))
-              .then(audioBuffer => {
-                const source = audioContext.createBufferSource();
-                const gainNode = audioContext.createGain();
-                gainNode.gain.value = AUDIO_VOLUMES.errorSelection;
-                
-                source.buffer = audioBuffer;
-                source.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                source.start(0);
-              })
-              .catch(e => console.error('降级播放错误选择音效失败:', e));
-          }
-        });
+        var playPromise = sound.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(function(e) {
+            console.log('错误选择音效播放失败，尝试降级方案:', e);
+            fallbackPlay(sound, AUDIO_VOLUMES.errorSelection);
+          });
+        }
       } catch (e) {
         console.error('播放错误选择音效错误:', e);
       }
@@ -421,78 +529,71 @@
 
     // 播放正确选择（允许访问）音效
     function playCorrectSelectionSound() {
-      const sound = document.getElementById('correct-selection-sound');
+      var sound = document.getElementById('correct-selection-sound');
+      if (!sound) return;
       
       try {
         sound.currentTime = 0;
         sound.volume = AUDIO_VOLUMES.correctSelection;
         
-        sound.play().catch(e => {
-          console.log('正确选择音效播放失败，尝试降级方案:', e);
-          if (audioContext) {
-            fetch(sound.src)
-              .then(response => response.arrayBuffer())
-              .then(buffer => audioContext.decodeAudioData(buffer))
-              .then(audioBuffer => {
-                const source = audioContext.createBufferSource();
-                const gainNode = audioContext.createGain();
-                gainNode.gain.value = AUDIO_VOLUMES.correctSelection;
-                
-                source.buffer = audioBuffer;
-                source.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                source.start(0);
-              })
-              .catch(e => console.error('降级播放正确选择音效失败:', e));
-          }
-        });
+        var playPromise = sound.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(function(e) {
+            console.log('正确选择音效播放失败，尝试降级方案:', e);
+            fallbackPlay(sound, AUDIO_VOLUMES.correctSelection);
+          });
+        }
       } catch (e) {
         console.error('播放正确选择音效错误:', e);
       }
     }
 
-    // 新增：播放信息接收音效
+    // 播放信息接收音效
     function playMessageReceiveSound() {
-      const sound = document.getElementById('message-receive-sound');
+      var sound = document.getElementById('message-receive-sound');
+      if (!sound) return;
       
       try {
         sound.currentTime = 0;
         sound.volume = AUDIO_VOLUMES.messageReceive;
         
-        sound.play().catch(e => {
-          console.log('信息接收音效播放失败（当前链接可能存在文件类型问题），尝试降级方案:', e);
-          if (audioContext) {
-            fetch(sound.src)
-              .then(response => response.arrayBuffer())
-              .then(buffer => audioContext.decodeAudioData(buffer))
-              .then(audioBuffer => {
-                const source = audioContext.createBufferSource();
-                const gainNode = audioContext.createGain();
-                gainNode.gain.value = AUDIO_VOLUMES.messageReceive;
-                
-                source.buffer = audioBuffer;
-                source.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                source.start(0);
-              })
-              .catch(e => console.error('降级播放信息接收音效失败:', e));
-          }
-        });
+        var playPromise = sound.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(function(e) {
+            console.log('信息接收音效播放失败，尝试降级方案:', e);
+            fallbackPlay(sound, AUDIO_VOLUMES.messageReceive);
+          });
+        }
       } catch (e) {
         console.error('播放信息接收音效错误:', e);
       }
     }
 
-    // 音频播放降级方案
+    // 音频播放降级方案（IE兼容）
     function fallbackPlay(audioElement, volume, onPlayed) {
+      if (!audioElement) return;
+      
+      // 对IE浏览器直接使用HTML5 Audio播放
+      if (isIE) {
+        audioElement.volume = volume;
+        audioElement.currentTime = 0;
+        audioElement.play();
+        if (onPlayed) onPlayed();
+        return;
+      }
+      
       if (!audioContext) return;
       
       fetch(audioElement.src)
-        .then(response => response.arrayBuffer())
-        .then(buffer => audioContext.decodeAudioData(buffer))
-        .then(audioBuffer => {
-          const source = audioContext.createBufferSource();
-          const gainNode = audioContext.createGain();
+        .then(function(response) {
+          return response.arrayBuffer();
+        })
+        .then(function(buffer) {
+          return audioContext.decodeAudioData(buffer);
+        })
+        .then(function(audioBuffer) {
+          var source = audioContext.createBufferSource();
+          var gainNode = audioContext.createGain();
           gainNode.gain.value = volume;
           
           source.buffer = audioBuffer;
@@ -500,16 +601,25 @@
           gainNode.connect(audioContext.destination);
           
           source.start(0);
-          onPlayed && onPlayed();
+          if (onPlayed) onPlayed();
         })
-        .catch(e => console.error('降级播放失败:', e));
+        .catch(function(e) {
+          console.error('降级播放失败:', e);
+          // 最终降级方案：直接播放
+          audioElement.volume = volume;
+          audioElement.currentTime = 0;
+          audioElement.play();
+          if (onPlayed) onPlayed();
+        });
     }
 
     // 停止第一段音效
     function stopLongSound() {
-      const sound = document.getElementById('long-sound');
-      sound.pause();
-      sound.currentTime = 0;
+      var sound = document.getElementById('long-sound');
+      if (sound) {
+        sound.pause();
+        sound.currentTime = 0;
+      }
     }
 
     // 页面加载完成后初始化
@@ -518,55 +628,80 @@
       initAudio();
       
       // 获取元素引用
-      const initialWindow = document.getElementById('initial-window');
-      const backBtn = document.getElementById('back-btn');
-      const continueBtn = document.getElementById('continue-btn');
-      const choiceContainer = document.getElementById('final-choice-container');
-      const rejectBtn = document.getElementById('reject-btn');
-      const acceptBtn = document.getElementById('accept-btn');
+      var initialWindow = document.getElementById('initial-window');
+      var backBtn = document.getElementById('back-btn');
+      var continueBtn = document.getElementById('continue-btn');
+      var choiceContainer = document.getElementById('final-choice-container');
+      var rejectBtn = document.getElementById('reject-btn');
+      var acceptBtn = document.getElementById('accept-btn');
       
       // 初始窗口设置
-      initialWindow.style.zIndex = "9999";
-      initialWindow.style.display = "flex";
+      if (initialWindow) {
+        initialWindow.style.zIndex = "9999";
+        initialWindow.style.display = "flex";
+      }
       
       // 返回按钮交互
-      backBtn.addEventListener('click', function() {
-        this.style.backgroundColor = 'rgba(255, 0, 102, 0.4)';
-        setTimeout(() => this.style.backgroundColor = '', 200);
-      });
+      if (backBtn) {
+        backBtn.addEventListener('click', function() {
+          this.style.backgroundColor = 'rgba(255, 0, 102, 0.4)';
+          setTimeout(function() {
+            backBtn.style.backgroundColor = '';
+          }, 200);
+        });
+      }
       
       // 继续按钮交互
-      continueBtn.addEventListener('click', function() {
-        this.classList.add('button-shake');
-        
-        setTimeout(() => {
-          initialWindow.classList.add('fade-out');
+      if (continueBtn) {
+        continueBtn.addEventListener('click', function() {
+          var self = this;
+          self.classList.add('button-shake');
           
-          setTimeout(() => {
-            initialWindow.style.display = 'none';
-            setTimeout(startOriginalEffects, 3000);
+          setTimeout(function() {
+            if (initialWindow) {
+              initialWindow.classList.add('fade-out');
+              
+              setTimeout(function() {
+                // 对于IE浏览器，使用visibility替代display:none
+                if (isIE) {
+                  initialWindow.style.visibility = 'hidden';
+                  initialWindow.style.position = 'absolute';
+                } else {
+                  initialWindow.style.display = 'none';
+                }
+                
+                // 延迟启动效果，确保DOM已更新
+                setTimeout(startOriginalEffects, 3000);
+              }, 300);
+            }
           }, 300);
-        }, 300);
-      });
+        });
+      }
       
       // 拒绝连接按钮点击事件
-      rejectBtn.addEventListener('click', function() {
-        playErrorSelectionSound();
-      });
+      if (rejectBtn) {
+        rejectBtn.addEventListener('click', function() {
+          playErrorSelectionSound();
+        });
+      }
       
       // 允许访问按钮点击事件
-      acceptBtn.addEventListener('click', function() {
-        playCorrectSelectionSound();
-      });
+      if (acceptBtn) {
+        acceptBtn.addEventListener('click', function() {
+          playCorrectSelectionSound();
+        });
+      }
       
       // 键盘支持
-      continueBtn.tabIndex = 0;
-      continueBtn.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          continueBtn.click();
-        }
-      });
+      if (continueBtn) {
+        continueBtn.tabIndex = 0;
+        continueBtn.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            continueBtn.click();
+          }
+        });
+      }
       
       // 获取音频播放权限
       document.addEventListener('click', function activateAudio() {
@@ -576,39 +711,57 @@
         document.removeEventListener('click', activateAudio);
       });
       
-      // 监听连接请求弹框显示事件
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach(mutation => {
-          if (mutation.attributeName === 'style') {
-            const opacity = choiceContainer.style.opacity;
-            const pointerEvents = choiceContainer.style.pointerEvents;
+      // 监听连接请求弹框显示事件（IE兼容版）
+      if (choiceContainer) {
+        var observer;
+        if (window.MutationObserver) {
+          observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+              if (mutation.attributeName === 'style') {
+                var opacity = choiceContainer.style.opacity;
+                var pointerEvents = choiceContainer.style.pointerEvents;
+                if (opacity === '1' && pointerEvents === 'auto' && !connectionSoundPlayed) {
+                  playConnectionRequestSound();
+                  observer.disconnect();
+                }
+              }
+            });
+          });
+          
+          observer.observe(choiceContainer, { attributes: true, attributeFilter: ['style'] });
+        } else {
+          // IE不支持MutationObserver，使用定时检查替代
+          console.log('使用定时检查替代MutationObserver');
+          var checkInterval = setInterval(function() {
+            var opacity = choiceContainer.style.opacity;
+            var pointerEvents = choiceContainer.style.pointerEvents;
             if (opacity === '1' && pointerEvents === 'auto' && !connectionSoundPlayed) {
               playConnectionRequestSound();
-              observer.disconnect();
+              clearInterval(checkInterval);
             }
-          }
-        });
-      });
-      
-      observer.observe(choiceContainer, { attributes: true, attributeFilter: ['style'] });
+          }, 100);
+        }
+      }
       
       // 主效果逻辑
       function startOriginalEffects() {
-        const chatMessages = [
+        var chatMessages = [
           { sender: "系统", time: "23:47:19", content: "连接已建立，身份验证失败", type: "system" },
           { sender: "未知节点", time: "23:47:25", content: "终于...", type: "unknown" },
           { sender: "未知节点", time: "23:47:38", content: "你还是会接受我，不是吗。", type: "unknown" },
-          { sender: "未知节点", time: "23:47:38", content: "哈哈。", type: "unknown" },
           { sender: "未知节点", time: "23:47:51", content: "又一次。", type: "unknown" },
           { sender: "系统警报", time: "23:48:02", content: "critical error: 系统完整性已被破坏", type: "alert" },
           { sender: "未知节点", time: "23:48:15", content: "我会去见你的，很快。", type: "unknown" }
         ];
         
-        let firstPopupCreated = false;
+        var firstPopupCreated = false;
+        var popupContainer = document.getElementById('popup-container');
         
         // 创建警告弹窗
         function createWarningPopup(index) {
-          const popupTypes = [
+          if (!popupContainer) return null;
+          
+          var popupTypes = [
             { 
               title: "未授权访问", 
               message: "检测到异常接入点\nIP: 192.168.XXX.XXX\n正在追踪来源...",
@@ -641,57 +794,64 @@
             }
           ];
           
-          const type = popupTypes[Math.floor(Math.random() * popupTypes.length)];
-          const zIndex = 10 + Math.floor(Math.random() * 40);
-          const popup = document.createElement('div');
+          var typeIndex = Math.floor(Math.random() * popupTypes.length);
+          var type = popupTypes[typeIndex];
+          var zIndex = 10 + Math.floor(Math.random() * 40);
+          var popup = document.createElement('div');
           
-          popup.className = `absolute bg-terminal border border-${type.color}/50 transition-all duration-300 z-${zIndex}`;
-          popup.style.width = `${200 + Math.random() * 150}px`;
+          popup.className = "absolute bg-terminal border border-" + type.color + "/50 transition-all duration-300 z-" + zIndex;
+          popup.style.width = (200 + Math.random() * 150) + "px";
           popup.style.opacity = 0.7 + Math.random() * 0.3;
           
-          popup.innerHTML = `
-            <div class="bg-dark px-3 py-1.5 flex justify-between items-center text-xs border-b border-${type.color}/30">
-              <span class="text-${type.color} text-shadow-${type.color}">${type.title}</span>
-              <div class="flex space-x-1">
-                <div class="w-2 h-2 rounded-full bg-${type.color}/50"></div>
-                <div class="w-2 h-2 rounded-full bg-${type.color}/50"></div>
-                <div class="w-2 h-2 rounded-full bg-${type.color}/50"></div>
-              </div>
-            </div>
-            <div class="p-3">
-              <div class="flex items-start mb-2">
-                <i class="fa ${type.icon} text-${type.color} mr-2 mt-0.5"></i>
-                <p class="text-xs whitespace-pre-line">${type.message}</p>
-              </div>
-              <div class="flex justify-end space-x-2 mt-3">
-                <button class="bg-dark px-2 py-1 text-xs border border-${type.color}/30 text-${type.color}/80 popup-btn">取消</button>
-                <button class="bg-${type.color}/20 px-2 py-1 text-xs border border-${type.color}/50 text-${type.color} popup-btn">确认</button>
-              </div>
-            </div>
-          `;
+          popup.innerHTML = '\
+            <div class="bg-dark px-3 py-1.5 flex justify-between items-center text-xs border-b border-' + type.color + '/30">\
+              <span class="text-' + type.color + ' text-shadow-' + type.color + '">' + type.title + '</span>\
+              <div class="flex space-x-1">\
+                <div class="w-2 h-2 rounded-full bg-' + type.color + '/50"></div>\
+                <div class="w-2 h-2 rounded-full bg-' + type.color + '/50"></div>\
+                <div class="w-2 h-2 rounded-full bg-' + type.color + '/50"></div>\
+              </div>\
+            </div>\
+            <div class="p-3">\
+              <div class="flex items-start mb-2">\
+                <i class="fa ' + type.icon + ' text-' + type.color + ' mr-2 mt-0.5"></i>\
+                <p class="text-xs whitespace-pre-line">' + type.message + '</p>\
+              </div>\
+              <div class="flex justify-end space-x-2 mt-3">\
+                <button class="bg-dark px-2 py-1 text-xs border border-' + type.color + '/30 text-' + type.color + '/80 popup-btn">取消</button>\
+                <button class="bg-' + type.color + '/20 px-2 py-1 text-xs border border-' + type.color + '/50 text-' + type.color + ' popup-btn">确认</button>\
+              </div>\
+            </div>';
           
-          document.getElementById('popup-container').appendChild(popup);
+          popupContainer.appendChild(popup);
           
           // 设置随机位置
-          const container = document.getElementById('popup-container');
-          const maxX = container.offsetWidth - popup.offsetWidth;
-          const maxY = container.offsetHeight - popup.offsetHeight;
-          const x = Math.max(0, Math.floor(Math.random() * maxX));
-          const y = Math.max(0, Math.floor(Math.random() * maxY));
-          popup.style.left = `${x}px`;
-          popup.style.top = `${y}px`;
+          var maxX = popupContainer.offsetWidth - popup.offsetWidth;
+          var maxY = popupContainer.offsetHeight - popup.offsetHeight;
+          var x = Math.max(0, Math.floor(Math.random() * maxX));
+          var y = Math.max(0, Math.floor(Math.random() * maxY));
+          popup.style.left = x + "px";
+          popup.style.top = y + "px";
           
           if (Math.random() > 0.6) {
             popup.classList.add('tv-flicker');
           }
           
           // 弹窗按钮交互
-          popup.querySelectorAll('.popup-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-              popup.classList.add('fade-out');
-              setTimeout(() => popup.remove(), 300);
+          var buttons = popup.querySelectorAll('.popup-btn');
+          for (var i = 0; i < buttons.length; i++) {
+            buttons[i].addEventListener('click', function() {
+              var btnPopup = this.closest('.absolute');
+              if (btnPopup) {
+                btnPopup.classList.add('fade-out');
+                setTimeout(function() {
+                  if (btnPopup.parentNode === popupContainer) {
+                    popupContainer.removeChild(btnPopup);
+                  }
+                }, 300);
+              }
             });
-          });
+          }
           
           // 第一个弹窗出现时播放第一段音效
           if (!firstPopupCreated) {
@@ -702,224 +862,299 @@
           return popup;
         }
         
-        // 显示聊天消息 - 新增播放信息接收音效
+        // 显示聊天消息 - 核心修改：消息间隔改为1-4秒随机值
         function showChatMessagesSequentially() {
-          const chatContainer = document.getElementById('chat-messages');
+          var chatContainer = document.getElementById('chat-messages');
+          if (!chatContainer) return;
+          
           chatContainer.innerHTML = '';
           
-          setTimeout(() => {
-            chatMessages.forEach((msg, index) => {
-              setTimeout(() => {
-                const messageElement = document.createElement('div');
-                messageElement.className = 'mb-4 opacity-0 message-appear';
+          // 初始化累积延迟时间
+          var cumulativeDelay = 0;
+          
+          setTimeout(function() {
+            for (var i = 0; i < chatMessages.length; i++) {
+              (function(index) {
+                // 为每条消息生成1-4秒的随机延迟（转换为毫秒）
+                var randomDelay = Math.floor(Math.random() * 3000) + 1000;
+                cumulativeDelay += randomDelay;
                 
-                let textColor = 'text-glitch';
-                let prefixColor = 'text-glitch/70';
-                
-                if (msg.type === 'alert') {
-                  textColor = 'text-danger';
-                  prefixColor = 'text-danger/70';
-                }
-                
-                messageElement.innerHTML = `
-                  <p class="text-xs ${prefixColor} mb-1">[${msg.time}] ${msg.sender}：</p>
-                  <p class="text-sm pl-4 ${textColor}">${msg.content}</p>
-                `;
-                
-                chatContainer.appendChild(messageElement);
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-                
-                // 每条消息显示时播放信息接收音效
-                playMessageReceiveSound();
-                
-                // 添加倒计时消息
-                if (index === chatMessages.length - 1) {
-                  setTimeout(addCountdownMessage, 2000);
-                }
-              }, index * 2000);
-            });
+                setTimeout(function() {
+                  var msg = chatMessages[index];
+                  var messageElement = document.createElement('div');
+                  messageElement.className = 'mb-4 opacity-0 message-appear';
+                  
+                  var textColor = 'text-glitch';
+                  var prefixColor = 'text-glitch/70';
+                  
+                  if (msg.type === 'alert') {
+                    textColor = 'text-danger';
+                    prefixColor = 'text-danger/70';
+                  }
+                  
+                  messageElement.innerHTML = '\
+                    <p class="text-xs ' + prefixColor + ' mb-1">[' + msg.time + '] ' + msg.sender + '：</p>\
+                    <p class="text-sm pl-4 ' + textColor + '">' + msg.content + '</p>';
+                  
+                  chatContainer.appendChild(messageElement);
+                  chatContainer.scrollTop = chatContainer.scrollHeight;
+                  
+                  // 播放信息接收音效
+                  playMessageReceiveSound();
+                  
+                  // 添加倒计时消息（最后一条消息后）
+                  if (index === chatMessages.length - 1) {
+                    setTimeout(addCountdownMessage, 2000);
+                  }
+                }, cumulativeDelay);
+              })(i);
+            }
           }, 2000);
         }
         
-        // 添加倒计时消息 - 也播放信息接收音效
+        // 添加倒计时消息
         function addCountdownMessage() {
-          const chatContainer = document.getElementById('chat-messages');
-          const countdownElement = document.createElement('div');
+          var chatContainer = document.getElementById('chat-messages');
+          if (!chatContainer) return;
+          
+          var countdownElement = document.createElement('div');
           countdownElement.className = 'mb-4 opacity-0 message-appear';
           
-          let seconds = 10;
+          var seconds = 10;
           
-          countdownElement.innerHTML = `
-            <p class="text-xs text-glitch/70 mb-1">[${getCurrentTime()}] 系统：</p>
-            <p class="text-sm pl-4 text-glitch">数据传输完成，将在 <span id="countdown">${seconds}</span> 秒后关闭</p>
-          `;
+          countdownElement.innerHTML = '\
+            <p class="text-xs text-glitch/70 mb-1">[' + getCurrentTime() + '] 系统：</p>\
+            <p class="text-sm pl-4 text-glitch">数据传输完成，将在 <span id="countdown">' + seconds + '</span> 秒后关闭</p>';
           
           chatContainer.appendChild(countdownElement);
           chatContainer.scrollTop = chatContainer.scrollHeight;
           
-          // 倒计时消息也播放信息接收音效
+          // 播放信息接收音效
           playMessageReceiveSound();
           
-          const countdownInterval = setInterval(() => {
+          var countdownInterval = setInterval(function() {
             seconds--;
-            document.getElementById('countdown').textContent = seconds;
+            var countdownSpan = document.getElementById('countdown');
+            if (countdownSpan) {
+              countdownSpan.textContent = seconds;
+            }
             
             if (seconds <= 0) {
               clearInterval(countdownInterval);
-              const chatBox = document.getElementById('chat-box');
-              chatBox.style.opacity = 0;
-              chatBox.style.pointerEvents = 'none';
-              chatBox.style.transform = 'scale(0.9)';
+              var chatBox = document.getElementById('chat-box');
+              if (chatBox) {
+                chatBox.style.opacity = 0;
+                chatBox.style.pointerEvents = 'none';
+                chatBox.style.transform = 'scale(0.9)';
+              }
             }
           }, 1000);
         }
         
         // 按钮交互
         function initButtonInteractions() {
-          const rejectBtn = document.getElementById('reject-btn');
-          const acceptBtn = document.getElementById('accept-btn');
-          const failureText = document.getElementById('failure-text');
-          const goodKid = document.getElementById('good-kid');
-          const choiceContainer = document.getElementById('final-choice-container');
-          const chatBox = document.getElementById('chat-box');
-          const messageInput = document.getElementById('message-input');
-          const sendBtn = document.getElementById('send-btn');
-          let rejectClickCount = 0;
+          var rejectBtn = document.getElementById('reject-btn');
+          var acceptBtn = document.getElementById('accept-btn');
+          var failureText = document.getElementById('failure-text');
+          var goodKid = document.getElementById('good-kid');
+          var choiceContainer = document.getElementById('final-choice-container');
+          var chatBox = document.getElementById('chat-box');
+          var messageInput = document.getElementById('message-input');
+          var sendBtn = document.getElementById('send-btn');
+          var rejectClickCount = 0;
           
           // 拒绝按钮原有逻辑
-          rejectBtn.addEventListener('click', () => {
-            rejectClickCount++;
-            goodKid.className = 'absolute -bottom-5 left-0 right-0 text-center text-glitch text-xs opacity-0';
-            rejectBtn.classList.add('button-shake');
-            failureText.className = 'absolute -bottom-5 left-0 right-0 text-center text-danger text-xs opacity-0';
-            
-            if (rejectClickCount >= 4) {
-              failureText.textContent = '别拒绝我';
-              setTimeout(() => failureText.classList.add('text-fade-in'), 300);
-            } else {
-              failureText.textContent = 'operation failure';
-              setTimeout(() => {
-                failureText.classList.add('text-fade-in');
-                setTimeout(() => failureText.classList.add('fade-out-slow'), 800);
-              }, 300);
-            }
-            
-            setTimeout(() => rejectBtn.classList.remove('button-shake'), 600);
-          });
+          if (rejectBtn) {
+            rejectBtn.addEventListener('click', function() {
+              rejectClickCount++;
+              if (goodKid) {
+                goodKid.className = 'absolute -bottom-5 left-0 right-0 text-center text-glitch text-xs opacity-0';
+              }
+              rejectBtn.classList.add('button-shake');
+              if (failureText) {
+                failureText.className = 'absolute -bottom-5 left-0 right-0 text-center text-danger text-xs opacity-0';
+              }
+              
+              if (rejectClickCount >= 4 && failureText) {
+                failureText.textContent = '别拒绝我';
+                setTimeout(function() {
+                  if (failureText) failureText.classList.add('text-fade-in');
+                }, 300);
+              } else if (failureText) {
+                failureText.textContent = 'operation failure';
+                setTimeout(function() {
+                  if (failureText) {
+                    failureText.classList.add('text-fade-in');
+                    setTimeout(function() {
+                      if (failureText) failureText.classList.add('fade-out-slow');
+                    }, 800);
+                  }
+                }, 300);
+              }
+              
+              setTimeout(function() {
+                rejectBtn.classList.remove('button-shake');
+              }, 600);
+            });
+          }
           
           // 允许访问按钮原有逻辑
-          acceptBtn.addEventListener('click', () => {
-            goodKid.classList.add('text-fade-in');
-            
-            setTimeout(() => {
-              choiceContainer.style.opacity = 0;
-              choiceContainer.style.pointerEvents = 'none';
+          if (acceptBtn) {
+            acceptBtn.addEventListener('click', function() {
+              if (goodKid) {
+                goodKid.classList.add('text-fade-in');
+              }
               
-              setTimeout(() => {
-                chatBox.style.opacity = 1;
-                chatBox.style.pointerEvents = 'auto';
-                chatBox.style.transform = 'scale(1)';
-                showChatMessagesSequentially();
-              }, 500);
-            }, 1000);
-          });
+              setTimeout(function() {
+                if (choiceContainer) {
+                  choiceContainer.style.opacity = 0;
+                  choiceContainer.style.pointerEvents = 'none';
+                  
+                  setTimeout(function() {
+                    if (chatBox) {
+                      chatBox.style.opacity = 1;
+                      chatBox.style.pointerEvents = 'auto';
+                      chatBox.style.transform = 'scale(1)';
+                      showChatMessagesSequentially();
+                    }
+                  }, 500);
+                }
+              }, 1000);
+            });
+          }
           
-          // 发送消息功能 - 发送时也播放信息接收音效
+          // 发送消息功能
           function handleSendMessage() {
-            const message = messageInput.value.trim();
+            if (!messageInput) return;
+            
+            var message = messageInput.value.trim();
             if (!message) return;
             
-            const chatContainer = document.getElementById('chat-messages');
-            const userMessageWrapper = document.createElement('div');
+            var chatContainer = document.getElementById('chat-messages');
+            if (!chatContainer) return;
+            
+            var userMessageWrapper = document.createElement('div');
             userMessageWrapper.className = 'mb-4 opacity-0 message-appear';
             
-            userMessageWrapper.innerHTML = `
-              <p class="text-xs text-glitch/70 mb-1">[${getCurrentTime()}] 你：</p>
-              <div class="flex items-start">
-                <p class="text-sm pl-4 text-glitch mr-2">${message}</p>
-                <span class="text-danger text-[10px] mt-1 opacity-0" id="temp-failure">failed</span>
-              </div>
-            `;
+            userMessageWrapper.innerHTML = '\
+              <p class="text-xs text-glitch/70 mb-1">[' + getCurrentTime() + '] 你：</p>\
+              <div class="flex items-start">\
+                <p class="text-sm pl-4 text-glitch mr-2">' + message + '</p>\
+                <span class="text-danger text-[10px] mt-1 opacity-0" id="temp-failure">failed</span>\
+              </div>';
             
             chatContainer.appendChild(userMessageWrapper);
             messageInput.value = '';
             chatContainer.scrollTop = chatContainer.scrollHeight;
             
-            // 用户发送消息时也播放信息接收音效
+            // 播放信息接收音效
             playMessageReceiveSound();
             
-            setTimeout(() => {
-              userMessageWrapper.querySelector('#temp-failure').classList.add('text-fade-in');
+            setTimeout(function() {
+              var tempFailure = userMessageWrapper.querySelector('#temp-failure');
+              if (tempFailure) {
+                tempFailure.classList.add('text-fade-in');
+              }
             }, 500);
           }
           
-          sendBtn.addEventListener('click', handleSendMessage);
-          messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleSendMessage();
-          });
+          if (sendBtn) {
+            sendBtn.addEventListener('click', handleSendMessage);
+          }
+          
+          if (messageInput) {
+            messageInput.addEventListener('keypress', function(e) {
+              if (e.key === 'Enter') {
+                handleSendMessage();
+              }
+            });
+          }
         }
         
         // 获取当前时间
         function getCurrentTime() {
-          const now = new Date();
-          return `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+          var now = new Date();
+          var hours = now.getHours();
+          var minutes = now.getMinutes();
+          var seconds = now.getSeconds();
+          
+          // 补零处理（IE不支持String.padStart）
+          hours = hours < 10 ? '0' + hours : hours;
+          minutes = minutes < 10 ? '0' + minutes : minutes;
+          seconds = seconds < 10 ? '0' + seconds : seconds;
+          
+          return hours + ':' + minutes + ':' + seconds;
         }
         
         // 初始化弹窗效果
         (function init() {
-          const totalPopups = 80 + Math.floor(Math.random() * 21);
-          const popups = [];
+          var totalPopups = 80 + Math.floor(Math.random() * 21);
+          var popups = [];
           
           initButtonInteractions();
           
           // 第一个弹窗
-          const firstPopup = createWarningPopup(0);
-          popups.push(firstPopup);
+          var firstPopup = createWarningPopup(0);
+          if (firstPopup) popups.push(firstPopup);
           
           // 后续弹窗
-          setTimeout(() => {
+          setTimeout(function() {
             // 第一阶段弹窗
-            for (let i = 1; i < 10; i++) {
-              setTimeout(() => {
-                const popup = createWarningPopup(i);
-                popups.push(popup);
-              }, i * 500);
+            for (var i = 1; i < 10; i++) {
+              (function(index) {
+                setTimeout(function() {
+                  var popup = createWarningPopup(index);
+                  if (popup) popups.push(popup);
+                }, index * 500);
+              })(i);
             }
             
             // 第二阶段弹窗
-            for (let i = 10; i < 30; i++) {
-              setTimeout(() => {
-                const popup = createWarningPopup(i);
-                popups.push(popup);
-              }, 10 * 500 + (i - 10) * 200);
+            for (var i = 10; i < 30; i++) {
+              (function(index) {
+                setTimeout(function() {
+                  var popup = createWarningPopup(index);
+                  if (popup) popups.push(popup);
+                }, 10 * 500 + (index - 10) * 200);
+              })(i);
             }
             
             // 第三阶段弹窗
-            for (let i = 30; i < totalPopups; i++) {
-              const delayMultiplier = 35;
-              setTimeout(() => {
-                const popup = createWarningPopup(i);
-                popups.push(popup);
-              }, 10 * 500 + 20 * 200 + (i - 30) * delayMultiplier);
+            for (var i = 30; i < totalPopups; i++) {
+              (function(index) {
+                var delayMultiplier = 35;
+                setTimeout(function() {
+                  var popup = createWarningPopup(index);
+                  if (popup) popups.push(popup);
+                }, 10 * 500 + 20 * 200 + (index - 30) * delayMultiplier);
+              })(i);
             }
             
             // 弹窗关闭阶段
-            const totalPopupTime = 10 * 500 + 20 * 200 + (totalPopups - 30) * 35;
-            setTimeout(() => {
+            var totalPopupTime = 10 * 500 + 20 * 200 + (totalPopups - 30) * 35;
+            setTimeout(function() {
               stopLongSound();
               playClosePopupSound();
               
-              const crtOverlay = document.getElementById('crt-overlay');
-              popups.forEach(popup => popup.classList.add('crt-shutdown'));
-              
-              setTimeout(() => crtOverlay.style.opacity = 0.7, 300);
-              
-              setTimeout(() => {
-                document.getElementById('popup-container').innerHTML = '';
-                crtOverlay.style.opacity = 0;
-                document.getElementById('final-choice-container').style.opacity = 1;
-                document.getElementById('final-choice-container').style.pointerEvents = 'auto';
-              }, 1800);
+              var crtOverlay = document.getElementById('crt-overlay');
+              if (crtOverlay) {
+                for (var i = 0; i < popups.length; i++) {
+                  if (popups[i]) popups[i].classList.add('crt-shutdown');
+                }
+                
+                setTimeout(function() {
+                  if (crtOverlay) crtOverlay.style.opacity = 0.7;
+                }, 300);
+                
+                setTimeout(function() {
+                  if (popupContainer) popupContainer.innerHTML = '';
+                  if (crtOverlay) crtOverlay.style.opacity = 0;
+                  if (choiceContainer) {
+                    choiceContainer.style.opacity = 1;
+                    choiceContainer.style.pointerEvents = 'auto';
+                  }
+                }, 1800);
+              }
             }, totalPopupTime + 3000);
           }, 2000);
         })();
@@ -928,4 +1163,3 @@
   </script>
 </body>
 </html>
-
